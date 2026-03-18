@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/mjc00/Documents/Chico/star-land -not -path */node_modules/* -not -path */.git/* -not -path */.next/*)",
+      "Bash(docker exec:*)",
+      "Bash(node -e \"const net=require\\(''net''\\); const s=new net.Socket\\(\\); s.setTimeout\\(3000\\); s.connect\\(5432,''127.0.0.1'',\\(\\)=>{console.log\\(''TCP OK - puerto 5432 accesible''\\); s.destroy\\(\\)}\\); s.on\\(''error'',e=>console.error\\(''TCP ERROR:'',e.message\\)\\); s.on\\(''timeout'',\\(\\)=>console.error\\(''TCP TIMEOUT''\\)\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(npm install:*)",
+      "Bash(docker compose:*)",
+      "Bash(npx prisma:*)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":5432\")",
+      "Bash(tasklist /fi \"pid eq 5908\")",
+      "Bash(tasklist /fi \"pid eq 3884\")",
+      "Bash(powershell -Command \"Get-Process -Id 5908,3884 | Select-Object Id,ProcessName,Path\")"
+    ]
+  }
+}

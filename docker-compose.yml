@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: starland-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: starland
+      POSTGRES_PASSWORD: starland_pass
+      POSTGRES_DB: starland
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    volumes:
+      - starland_pgdata:/var/lib/postgresql/data
+
+volumes:
+  starland_pgdata:
