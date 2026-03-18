@@ -3,7 +3,7 @@
 import { useActionState } from "react"
 import Link from "next/link"
 import { Zap } from "lucide-react"
-import { registerAction } from "@/actions/auth"
+import { registerAction, type ActionState } from "@/actions/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-const initialState = {}
+const initialState: ActionState = {}
 
 export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState(

@@ -1,10 +1,10 @@
 "use server"
 
 import { AuthError } from "next-auth"
-import { z } from "zod"
 import bcrypt from "bcryptjs"
-import { signIn } from "@/lib/auth"
+import { signIn, signOut } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { loginSchema, registerSchema } from "@/lib/validations/auth"
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -13,24 +13,13 @@ export type ActionState = {
   success?: string
 }
 
-// ─── Schemas de validación ────────────────────────────────────────────────────
-
-const loginSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(1, "La contraseña es requerida"),
-})
-
-const registerSchema = z.object({
-  organizationName: z
-    .string()
-    .min(2, "El nombre de la organización debe tener al menos 2 caracteres"),
-  name: z.string().min(2, "Tu nombre debe tener al menos 2 caracteres"),
-  email: z.string().email("Email inválido"),
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
-})
-
 // ─── Login ────────────────────────────────────────────────────────────────────
 
+/**
+ * Server Action de login.
+ * Compatible con useActionState (React 19): (prevState, formData) => State.
+ * signIn con redirectTo lanza NEXT_REDIRECT — debe re-thrownarse.
+ */
 export async function loginAction(
   _prevState: ActionState,
   formData: FormData
@@ -41,7 +30,7 @@ export async function loginAction(
   })
 
   if (!parsed.success) {
-    return { error: parsed.error.errors[0].message }
+    return { error: parsed.error.issues[0].message }
   }
 
   try {
@@ -60,13 +49,20 @@ export async function loginAction(
           return { error: "Error al iniciar sesión. Inténtalo de nuevo." }
       }
     }
-    // Re-lanza para que Next.js procese el redirect
-    throw error
+    throw error // Re-lanza NEXT_REDIRECT para que Next.js procese la redirección
   }
 }
 
-// ─── Registro ────────────────────────────────────────────────────────────────
+// ─── Registro ─────────────────────────────────────────────────────────────────
 
+/**
+ * Server Action de registro.
+ *
+ * Decisión MVP: auto-login tras registro (mejor UX, menos pasos).
+ * Flujo: validar → email único → crear org → crear usuario → signIn.
+ *
+ * En fases futuras: usar db.$transaction() para atomicidad.
+ */
 export async function registerAction(
   _prevState: ActionState,
   formData: FormData
@@ -79,7 +75,7 @@ export async function registerAction(
   })
 
   if (!parsed.success) {
-    return { error: parsed.error.errors[0].message }
+    return { error: parsed.error.issues[0].message }
   }
 
   const { organizationName, name, email, password } = parsed.data
@@ -103,7 +99,7 @@ export async function registerAction(
     return { error: "Error al crear la cuenta. Inténtalo de nuevo." }
   }
 
-  // Inicia sesión automáticamente tras el registro
+  // Auto-login tras registro exitoso
   try {
     await signIn("credentials", {
       email,
@@ -114,9 +110,19 @@ export async function registerAction(
   } catch (error) {
     if (error instanceof AuthError) {
       return {
-        error: "Cuenta creada. Ve a iniciar sesión.",
+        error: "Cuenta creada correctamente. Inicia sesión para continuar.",
       }
     }
     throw error
   }
+}
+
+// ─── Logout ───────────────────────────────────────────────────────────────────
+
+/**
+ * Server Action de logout.
+ * Limpia la sesión JWT y redirige a /login.
+ */
+export async function logoutAction() {
+  await signOut({ redirectTo: "/login" })
 }

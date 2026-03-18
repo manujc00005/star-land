@@ -16,9 +16,149 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users User[]
+  users          User[]
+  owners         Owner[]
+  projects       Project[]
+  parcels        Parcel[]
+  projectParcels ProjectParcel[]
+  contracts      Contract[]
 
   @@map("organizations")
+}
+
+// ─── Propietario ───────────────────────────────────────────────────────────────
+// Propietario de parcelas. Sigue el patrón multi-tenancy: organizationId siempre
+// filtrado desde sesión JWT, nunca desde el cliente.
+
+model Owner {
+  id             String       @id @default(cuid())
+  name           String
+  nif            String
+  address        String?
+  phone          String?
+  email          String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  contracts Contract[]
+
+  @@map("owners")
+}
+
+// ─── Proyecto ─────────────────────────────────────────────────────────────────
+// Proyecto de energía renovable. Estado controlado por enum para garantizar
+// integridad a nivel de base de datos.
+// geometry: GeoJSON Polygon/MultiPolygon como Json? — sin PostGIS por ahora.
+// En la siguiente fase se sustituirá o complementará con geometría espacial real.
+
+enum ProjectStatus {
+  PLANNING
+  CONSTRUCTION
+  OPERATIVE
+
+  @@map("project_status")
+}
+
+model Project {
+  id             String        @id @default(cuid())
+  name           String
+  powerMW        Float
+  status         ProjectStatus @default(PLANNING)
+  geometry       Json?
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  projectParcels ProjectParcel[]
+
+  @@map("projects")
+}
+
+// ─── Parcela ──────────────────────────────────────────────────────────────────
+// Parcela catastral. cadastralRef único por organización (no global):
+//   @@unique([cadastralRef, organizationId]) — restricción compuesta en Prisma.
+// geometry: GeoJSON Polygon/MultiPolygon como Json? — mismo patrón que Project.
+// Preparada para: importación CSV, relaciones Project/Owner, PostGIS futuro.
+
+model Parcel {
+  id             String       @id @default(cuid())
+  cadastralRef   String
+  polygon        String
+  parcelNumber   String
+  surface        Float
+  landUse        String?
+  geometry       Json?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  projectParcels ProjectParcel[]
+  contracts      Contract[]
+
+  @@unique([cadastralRef, organizationId])
+  @@map("parcels")
+}
+
+// ─── Relación Proyecto ↔ Parcela ──────────────────────────────────────────────
+// Tabla intermedia M:N. organizationId denormalizado para simplificar queries
+// multi-tenant sin JOINs extra. @@unique garantiza que cada parcela se asigna
+// como máximo una vez por proyecto.
+
+model ProjectParcel {
+  id             String       @id @default(cuid())
+  projectId      String
+  project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parcelId       String
+  parcel         Parcel       @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([projectId, parcelId])
+  @@map("project_parcels")
+}
+
+// ─── Contrato ─────────────────────────────────────────────────────────────────
+// Contrato de arrendamiento o compraventa sobre una parcela catastral.
+// Vinculado a una parcela y un propietario de la misma organización.
+// Enums en BD para integridad: ContractType, ContractStatus.
+// Preparado para ampliar con: cláusulas, fases, anexos, expedientes.
+
+enum ContractType {
+  RENTAL
+  PURCHASE
+
+  @@map("contract_type")
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+
+  @@map("contract_status")
+}
+
+model Contract {
+  id             String         @id @default(cuid())
+  type           ContractType
+  status         ContractStatus @default(DRAFT)
+  price          Float?
+  signedAt       DateTime?
+  parcelId       String
+  parcel         Parcel         @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  ownerId        String
+  owner          Owner          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("contracts")
 }
 
 // ─── Usuario ──────────────────────────────────────────────────────────────────

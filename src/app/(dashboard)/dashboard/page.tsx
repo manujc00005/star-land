@@ -1,51 +1,37 @@
-import { auth } from "@/lib/auth"
+import { requireUser } from "@/lib/session"
+import { createAuthContext } from "@/services/base"
+import { getOrganizationById } from "@/services/organization.service"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FolderKanban, MapPin, Users, FileText } from "lucide-react"
 
 const statsCards = [
-  {
-    title: "Proyectos",
-    value: "—",
-    icon: FolderKanban,
-    description: "Proyectos activos",
-  },
-  {
-    title: "Parcelas",
-    value: "—",
-    icon: MapPin,
-    description: "Parcelas registradas",
-  },
-  {
-    title: "Propietarios",
-    value: "—",
-    icon: Users,
-    description: "Propietarios en base de datos",
-  },
-  {
-    title: "Contratos",
-    value: "—",
-    icon: FileText,
-    description: "Contratos gestionados",
-  },
+  { title: "Proyectos", value: "—", icon: FolderKanban, description: "Proyectos activos" },
+  { title: "Parcelas", value: "—", icon: MapPin, description: "Parcelas registradas" },
+  { title: "Propietarios", value: "—", icon: Users, description: "Propietarios en base de datos" },
+  { title: "Contratos", value: "—", icon: FileText, description: "Contratos gestionados" },
 ]
 
 export default async function DashboardPage() {
-  const session = await auth()
-  const firstName = session?.user?.name?.split(" ")[0] ?? "Usuario"
+  // requireUser() redirige a /login si no hay sesión — garantía de auth
+  const user = await requireUser()
+  const ctx = createAuthContext(user)
+
+  // Todos los datos se obtienen a través del servicio con ctx (organizationId)
+  const org = await getOrganizationById(ctx)
+
+  const firstName = user.name?.split(" ")[0] ?? "Usuario"
 
   return (
     <div className="space-y-6">
-      {/* Encabezado */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
           Bienvenido, {firstName}
         </h1>
         <p className="text-muted-foreground">
-          Resumen de actividad de tu organización
+          {org?.name} · Resumen de actividad
         </p>
       </div>
 
-      {/* Tarjetas de estadísticas */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statsCards.map(({ title, value, icon: Icon, description }) => (
           <Card key={title}>
@@ -61,7 +47,6 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {/* Actividad reciente */}
       <Card>
         <CardHeader>
           <CardTitle>Actividad reciente</CardTitle>

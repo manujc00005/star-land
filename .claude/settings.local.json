@@ -12,7 +12,13 @@
       "Bash(findstr \":5432\")",
       "Bash(tasklist /fi \"pid eq 5908\")",
       "Bash(tasklist /fi \"pid eq 3884\")",
-      "Bash(powershell -Command \"Get-Process -Id 5908,3884 | Select-Object Id,ProcessName,Path\")"
+      "Bash(powershell -Command \"Get-Process -Id 5908,3884 | Select-Object Id,ProcessName,Path\")",
+      "Bash(node -e \"const z = require\\(''zod''\\); console.log\\(z.ZOD_VERSION || require\\(''./node_modules/zod/package.json''\\).version\\)\")",
+      "Bash(npx tsc:*)",
+      "Bash(node -e \"require\\(''@radix-ui/react-slot''\\); console.log\\(''ok''\\)\")",
+      "Bash(ls \"C:\\\\Users\\\\mjc00\\\\Documents\\\\Chico\\\\star-land\\\\src\\\\app\\\\\\(dashboard\\)\\\\contracts\"\")",
+      "Bash(npx next:*)",
+      "Bash(docker ps:*)"
     ]
   }
 }
