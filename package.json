@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:local": "docker compose up -d && prisma db push --accept-data-loss && next dev",
-    "build": "next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
     "db:up": "docker compose up -d",

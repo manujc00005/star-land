@@ -18,7 +18,9 @@
       "Bash(node -e \"require\\(''@radix-ui/react-slot''\\); console.log\\(''ok''\\)\")",
       "Bash(ls \"C:\\\\Users\\\\mjc00\\\\Documents\\\\Chico\\\\star-land\\\\src\\\\app\\\\\\(dashboard\\)\\\\contracts\"\")",
       "Bash(npx next:*)",
-      "Bash(docker ps:*)"
+      "Bash(docker ps:*)",
+      "Bash(mkdir -p \"prisma/migrations/20260318000000_init\")",
+      "Bash(\"prisma/migrations/20260318000000_init/migration.sql\")"
     ]
   }
 }
