@@ -135,8 +135,8 @@ export function ProjectTabs({
                 <CardTitle className="text-base">Mapa</CardTitle>
                 <CardDescription className="flex items-center gap-3 text-xs">
                   <LegendDot color="blue" label="Recinto" />
-                  <LegendDot color="green" label="Con contrato" />
-                  <LegendDot color="amber" label="Sin contrato" />
+                  <LegendDot color="green" label="Con contrato vigente" />
+                  <LegendDot color="amber" label="Sin contrato vigente" />
                 </CardDescription>
               </CardHeader>
               <CardContent className="px-4 pb-4">

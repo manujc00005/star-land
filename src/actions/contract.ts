@@ -103,11 +103,14 @@ export async function deleteContractAction(id: string): Promise<void> {
 // Siguen el patrón useTransition del resto del panel (ver parcel-panel.tsx).
 
 /**
- * G1 — Cambia el estado de un contrato existente desde el panel de parcela.
+ * G1 — Cambia el estado legal de un contrato desde el panel de parcela.
  *
- * TODO (VF1): Decisión asumida — cambiar "estado de contratación" en el panel
- * equivale a cambiar Contract.status. Si se decide que deben ser estados
- * independientes, habrá que añadir ProjectParcel.contractingStatus y migrar.
+ * Nota: Contract.status es el estado legal/jurídico del contrato.
+ * ProjectParcel.negotiationStatus es el estado operativo de negociación.
+ * Son independientes salvo la regla D2: ACTIVE → auto-set SIGNED.
+ *
+ * ⚠️ Esta sincronización (D2) solo ocurre desde esta acción (panel de parcela).
+ * Editar el contrato desde /contracts/[id]/edit NO actualiza negotiationStatus.
  */
 export async function updateLinkedContractStatusAction(
   contractId: string,

@@ -65,42 +65,6 @@ export async function getContractsByProject(ctx: AuthContext, projectId: string)
   })
 }
 
-/**
- * Contratos agrupados por parcelId para un conjunto de parcelas.
- * Una sola query — sin N+1. Ordenados ACTIVE → DRAFT → EXPIRED dentro de cada parcela.
- */
-export async function getContractsByParcelIds(
-  ctx: AuthContext,
-  parcelIds: string[]
-): Promise<Map<string, Array<{ id: string; type: ContractType; status: ContractStatus; price: number | null; signedAt: Date | null; parcelId: string; owner: { id: string; name: string } }>>> {
-  if (parcelIds.length === 0) return new Map()
-
-  const contracts = await db.contract.findMany({
-    where: { organizationId: ctx.organizationId, parcelId: { in: parcelIds } },
-    include: { owner: { select: { id: true, name: true } } },
-    orderBy: { createdAt: "desc" },
-  })
-
-  // Prioridad ACTIVE(0) > DRAFT(1) > EXPIRED(2)
-  const priority: Record<string, number> = { ACTIVE: 0, DRAFT: 1, EXPIRED: 2 }
-
-  const map = new Map<string, typeof contracts>()
-  for (const c of contracts) {
-    const list = map.get(c.parcelId) ?? []
-    list.push(c)
-    map.set(c.parcelId, list)
-  }
-  for (const [parcelId, list] of map) {
-    map.set(
-      parcelId,
-      [...list].sort(
-        (a, b) => (priority[a.status] ?? 99) - (priority[b.status] ?? 99)
-      )
-    )
-  }
-  return map
-}
-
 // ── Escritura ──────────────────────────────────────────────────────────────────
 
 /**
@@ -184,13 +148,13 @@ export async function deleteContract(ctx: AuthContext, id: string) {
 }
 
 /**
- * Actualiza únicamente el estado del contrato.
+ * Actualiza únicamente el estado legal del contrato.
  * Operación quirúrgica: no requiere el resto de campos del contrato.
  * Verifica pertenencia a la organización antes de actualizar.
  *
- * TODO (VF1): Decisión asumida — "cambiar estado de contratación" = cambiar Contract.status.
- * Si en el futuro se quiere un estado independiente en ProjectParcel, habrá que añadir
- * un campo contractingStatus a ProjectParcel y migrar.
+ * El estado operativo de negociación vive en ProjectParcel.negotiationStatus.
+ * La sincronización entre ambos (regla D2: ACTIVE → SIGNED) la gestiona
+ * updateLinkedContractStatusAction en la capa de acciones, no aquí.
  */
 export async function updateContractStatus(
   ctx: AuthContext,

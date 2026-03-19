@@ -20,3 +20,7 @@ D1	¿Apruebas el conjunto de valores del enum? PENDING / CONTACTED / NEGOTIATING
 D2	¿Al crear un contrato ACTIVE desde el panel, el negotiationStatus se actualiza automáticamente a CONTRACTED?	Afecta a la lógica de createPanelContractAction y a la coherencia del sistema
 D3	¿El badge "Estado Contratación" en la tabla de parcelas pasa a mostrar negotiationStatus (reemplaza) o muestra ambos?	Afecta a ContractingStatusBadge y a la columna de la tabla
 D4	¿El panel muestra todos los contratos de la parcela o solo los no-EXPIRED?	Afecta a la query y a la UI del panel
+
+📌 Dos deudas técnicas a registrar antes de cerrar
+/owners/[id] no existe — todos los enlaces al propietario desde contratos, parcelas y el panel hacen 404. Afecta UX en múltiples sitios.
+updateContractAction (edición completa de contrato) no dispara la regla D2. Si se edita un contrato de DRAFT a ACTIVE desde /contracts/[id]/edit, el badge de negociación no se actualiza. El usuario no ve feedback de error porque no hay error — simplemente el sistema no está al tanto del projectId.
