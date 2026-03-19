@@ -4,9 +4,8 @@ import { createAuthContext } from "@/services/base"
 import { getProjects } from "@/services/project.service"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ProjectStatusBadge } from "@/components/projects/project-status-badge"
-import { DeleteProjectButton } from "@/components/projects/delete-project-button"
 import { FolderKanban, Plus } from "lucide-react"
+import { ProjectsTable } from "@/components/projects/projects-table"
 
 export default async function ProjectsPage() {
   const user = await requireUser()
@@ -43,59 +42,7 @@ export default async function ProjectsPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-muted-foreground">
-                  <th className="py-3 px-4 text-left font-medium">Nombre</th>
-                  <th className="py-3 px-4 text-left font-medium">Potencia</th>
-                  <th className="py-3 px-4 text-left font-medium">Estado</th>
-                  <th className="py-3 px-4 text-left font-medium hidden md:table-cell">
-                    Creado
-                  </th>
-                  <th className="py-3 px-4 text-right font-medium">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {projects.map((project) => (
-                  <tr
-                    key={project.id}
-                    className="border-b last:border-0 hover:bg-muted/50"
-                  >
-                    <td className="py-3 px-4">
-                      <Link
-                        href={`/projects/${project.id}`}
-                        className="font-medium hover:underline"
-                      >
-                        {project.name}
-                      </Link>
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground">
-                      {project.powerMW} MW
-                    </td>
-                    <td className="py-3 px-4">
-                      <ProjectStatusBadge status={project.status} />
-                    </td>
-                    <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">
-                      {project.createdAt.toLocaleDateString("es-ES")}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <Button asChild variant="ghost" size="sm">
-                        <Link href={`/projects/${project.id}/edit`}>
-                          Editar
-                        </Link>
-                      </Button>
-                      <DeleteProjectButton id={project.id} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
+        <ProjectsTable projects={projects} />
       )}
     </div>
   )

@@ -25,6 +25,7 @@ model Organization {
   parcels        Parcel[]
   projectParcels ProjectParcel[]
   contracts      Contract[]
+  parcelContacts ParcelContact[]
 
   @@map("organizations")
 }
@@ -57,23 +58,36 @@ model Owner {
 // En la siguiente fase se sustituirá o complementará con geometría espacial real.
 
 enum ProjectStatus {
-  PLANNING
-  CONSTRUCTION
-  OPERATIVE
+  OPPORTUNITY     // Oportunidad
+  IN_DEVELOPMENT  // En Desarrollo
+  RTB             // Ready to Build
+  IN_CONSTRUCTION // En Construcción
+  IN_OPERATION    // En Operación
 
   @@map("project_status")
 }
 
 model Project {
-  id             String        @id @default(cuid())
-  name           String
-  powerMW        Float
-  status         ProjectStatus @default(PLANNING)
-  geometry       Json?
-  organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id               String        @id @default(cuid())
+  name             String
+  // Potencia total MW — derivada de la suma de technologies[].powerMW.
+  // Puede ser null si ninguna tecnología tiene potencia definida.
+  // Mantenida para compatibilidad con KML, tabla, detalle.
+  powerMW          Float?
+  // Array de {type: string, powerMW?: number} — validado en app layer con Zod.
+  // Migración futura: tabla ProjectTechnology si se necesitan queries por tipo.
+  technologies     Json?
+  status           ProjectStatus @default(OPPORTUNITY)
+  // Campos relacionales como texto libre. FK en fases futuras.
+  connectionPoints String[]
+  cluster          String?
+  developer        String?
+  spv              String?
+  geometry         Json?
+  organizationId   String
+  organization     Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   projectParcels ProjectParcel[]
 
@@ -92,6 +106,7 @@ model Parcel {
   polygon        String
   parcelNumber   String
   surface        Float
+  municipality   String?
   landUse        String?
   geometry       Json?
   organizationId String
@@ -101,6 +116,7 @@ model Parcel {
 
   projectParcels ProjectParcel[]
   contracts      Contract[]
+  contacts       ParcelContact[]
 
   @@unique([cadastralRef, organizationId])
   @@map("parcels")
@@ -117,6 +133,11 @@ model ProjectParcel {
   project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   parcelId       String
   parcel         Parcel       @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  // Afección de la parcela en este proyecto concreto.
+  affectation    String?
+  // Notas de contratación en el contexto de este proyecto.
+  // Separadas de Parcel.notes (que serían globales) para permitir notas distintas por proyecto.
+  notes          String?
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime     @default(now())
@@ -162,6 +183,29 @@ model Contract {
   updatedAt      DateTime       @updatedAt
 
   @@map("contracts")
+}
+
+// ─── Contacto de parcela ──────────────────────────────────────────────────────
+// Persona de contacto/gestión asociada a una parcela. Semánticamente distinta
+// del Owner (propietario catastral que firma contratos).
+// Rol: texto libre + catálogo en app layer para no requerir migrations al añadir roles.
+// Ejemplos de rol: API, Interlocutor familiar, Agricultor, Abogado / Gestor, Otro.
+
+model ParcelContact {
+  id             String       @id @default(cuid())
+  name           String
+  role           String
+  phone          String?
+  email          String?
+  notes          String?
+  parcelId       String
+  parcel         Parcel       @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("parcel_contacts")
 }
 
 // ─── Usuario ──────────────────────────────────────────────────────────────────

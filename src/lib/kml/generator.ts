@@ -17,7 +17,7 @@
 
 import { geojsonGeometrySchema } from "@/lib/validations/geojson"
 import { TYPE_LABELS, STATUS_LABELS as CONTRACT_STATUS_LABELS } from "@/lib/validations/contract"
-import { STATUS_LABELS as PROJECT_STATUS_LABELS } from "@/lib/validations/project"
+import { PROJECT_STATUS_LABELS } from "@/lib/validations/project"
 import { geoJsonToKmlGeometry } from "./geometry"
 
 // ── Tipos públicos ─────────────────────────────────────────────────────────────
@@ -43,7 +43,7 @@ export type KmlParcelData = {
 export type KmlProjectData = {
   project: {
     name: string
-    powerMW: number
+    powerMW: number | null
     status: string
     geometry: unknown
   }
@@ -119,13 +119,13 @@ function buildProjectDescription(
 
   const lines = [
     `<b>Proyecto:</b> ${safeCdata(project.name)}`,
-    `<b>Potencia:</b> ${project.powerMW} MW`,
+    project.powerMW != null ? `<b>Potencia:</b> ${project.powerMW} MW` : null,
     `<b>Estado:</b> ${safeCdata(statusLabel)}`,
     `<b>Parcelas vinculadas:</b> ${parcelCount}`,
     `<b>Exportado:</b> ${formatDate(new Date())}`,
   ]
 
-  return `<![CDATA[${lines.join("<br>")}]]>`
+  return `<![CDATA[${lines.filter(Boolean).join("<br>")}]]>`
 }
 
 function buildContractBlock(contracts: KmlContractData[]): string {

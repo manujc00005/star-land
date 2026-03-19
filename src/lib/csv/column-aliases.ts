@@ -51,6 +51,14 @@ const FIELD_ALIASES: Record<string, string> = {
   usosuelo: "landUse",
   clasificacion: "landUse",
 
+  // ── municipality ─────────────────────────────────────────────────────────────
+  municipality: "municipality",
+  municipio: "municipality",
+  municipalidad: "municipality",
+  termino_municipal: "municipality",
+  termino: "municipality",
+  localidad: "municipality",
+
   // ── geometry ─────────────────────────────────────────────────────────────────
   geometry: "geometry",
   geojson: "geometry",
@@ -83,7 +91,7 @@ export function normalizeHeader(h: string): string {
     .replace(/[^a-z0-9_]/g, "")
 }
 
-type FieldName = "cadastralRef" | "polygon" | "parcelNumber" | "surface" | "landUse" | "geometry"
+type FieldName = "cadastralRef" | "polygon" | "parcelNumber" | "surface" | "landUse" | "municipality" | "geometry"
 
 /**
  * Dado un array de nombres de cabecera originales (tal como vienen del CSV),

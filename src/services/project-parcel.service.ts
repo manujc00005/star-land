@@ -113,6 +113,44 @@ export async function assignParcel(
   })
 }
 
+/**
+ * Actualiza la afección de una parcela en un proyecto concreto.
+ * Valida multi-tenant via organizationId. Pasa null para limpiarla.
+ */
+export async function updateParcelAffectation(
+  ctx: AuthContext,
+  projectParcelId: string,
+  affectation: string | null
+) {
+  const record = await db.projectParcel.findFirst({
+    where: { id: projectParcelId, organizationId: ctx.organizationId },
+  })
+  if (!record) notFound()
+  return db.projectParcel.update({
+    where: { id: projectParcelId },
+    data: { affectation },
+  })
+}
+
+/**
+ * Actualiza las notas de contratación de una parcela en un proyecto concreto.
+ * Pasa null para limpiarlas.
+ */
+export async function updateParcelNotes(
+  ctx: AuthContext,
+  projectParcelId: string,
+  notes: string | null
+) {
+  const record = await db.projectParcel.findFirst({
+    where: { id: projectParcelId, organizationId: ctx.organizationId },
+  })
+  if (!record) notFound()
+  return db.projectParcel.update({
+    where: { id: projectParcelId },
+    data: { notes },
+  })
+}
+
 /** Desvincula una parcela de un proyecto. */
 export async function removeParcel(
   ctx: AuthContext,

@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/session"
 import { logoutAction } from "@/actions/auth"
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
+import { ProjectSearch } from "@/components/layout/project-search"
 
 /**
  * Header del dashboard. Server Component: usa getCurrentUser() del helper de sesión.
@@ -14,7 +15,7 @@ export async function Header() {
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-card px-6 shrink-0">
-      <div /> {/* Espacio para futuro breadcrumb */}
+      <ProjectSearch />
 
       <div className="flex items-center gap-3">
         {/* Avatar e info del usuario */}

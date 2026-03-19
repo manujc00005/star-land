@@ -7,6 +7,8 @@ import {
   assignParcel,
   removeParcel,
   assignParcelsToProject,
+  updateParcelAffectation,
+  updateParcelNotes,
   type SpatialMatchResult,
 } from "@/services/project-parcel.service"
 
@@ -39,6 +41,36 @@ export async function removeParcelAction(
   await removeParcel(ctx, projectId, parcelId)
   revalidatePath(`/projects/${projectId}`)
   revalidatePath(`/projects/${projectId}/parcels`)
+}
+
+// ── Afección ───────────────────────────────────────────────────────────────────
+
+/**
+ * Actualiza la afección de una parcela en un proyecto.
+ * Se llama con useTransition desde AffectationSelect.
+ */
+export async function updateAffectationAction(
+  projectParcelId: string,
+  projectId: string,
+  affectation: string | null
+): Promise<void> {
+  const user = await requireUser()
+  const ctx = createAuthContext(user)
+  await updateParcelAffectation(ctx, projectParcelId, affectation)
+  revalidatePath(`/projects/${projectId}`)
+}
+
+// ── Notas de contratación ──────────────────────────────────────────────────────
+
+export async function updateParcelNotesAction(
+  projectParcelId: string,
+  projectId: string,
+  notes: string | null
+): Promise<void> {
+  const user = await requireUser()
+  const ctx = createAuthContext(user)
+  await updateParcelNotes(ctx, projectParcelId, notes)
+  revalidatePath(`/projects/${projectId}`)
 }
 
 // ── Cruce espacial automático ──────────────────────────────────────────────────

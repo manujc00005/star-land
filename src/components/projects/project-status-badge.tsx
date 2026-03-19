@@ -1,13 +1,12 @@
 import { cn } from "@/lib/utils"
-import {
-  type ProjectStatus,
-  STATUS_LABELS,
-} from "@/lib/validations/project"
+import { type ProjectStatus, PROJECT_STATUS_LABELS } from "@/lib/validations/project"
 
 const STATUS_STYLES: Record<ProjectStatus, string> = {
-  PLANNING: "bg-blue-100 text-blue-700",
-  CONSTRUCTION: "bg-amber-100 text-amber-700",
-  OPERATIVE: "bg-green-100 text-green-700",
+  OPPORTUNITY:     "bg-slate-100 text-slate-700",
+  IN_DEVELOPMENT:  "bg-blue-100 text-blue-700",
+  RTB:             "bg-purple-100 text-purple-700",
+  IN_CONSTRUCTION: "bg-amber-100 text-amber-700",
+  IN_OPERATION:    "bg-green-100 text-green-700",
 }
 
 export function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
@@ -18,7 +17,7 @@ export function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
         STATUS_STYLES[status]
       )}
     >
-      {STATUS_LABELS[status]}
+      {PROJECT_STATUS_LABELS[status]}
     </span>
   )
 }

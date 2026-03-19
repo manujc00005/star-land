@@ -38,6 +38,7 @@ export type ValidImportRow = {
   parcelNumber: string
   surface: number
   landUse: string | null
+  municipality: string | null
   geometry: GeoJSONGeometry | null
 }
 
@@ -92,6 +93,11 @@ const csvRowSchema = z.object({
     .number({ message: "Superficie inválida: debe ser un número" })
     .positive("Superficie debe ser mayor que 0"),
   landUse: z
+    .string()
+    .max(200)
+    .optional()
+    .transform((v) => v?.trim() || null),
+  municipality: z
     .string()
     .max(200)
     .optional()
@@ -153,6 +159,7 @@ export async function parseParcelCSV(
       parcelNumber: get("parcelNumber"),
       surface: get("surface"),
       landUse: get("landUse") || undefined,
+      municipality: get("municipality") || undefined,
     }
     const rawGeometry = get("geometry").trim()
 
@@ -188,6 +195,7 @@ export async function parseParcelCSV(
         parcelNumber: schemaResult.data.parcelNumber,
         surface: schemaResult.data.surface,
         landUse: schemaResult.data.landUse,
+        municipality: schemaResult.data.municipality,
         geometry,
       })
     }

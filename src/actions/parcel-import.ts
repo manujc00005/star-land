@@ -148,6 +148,7 @@ export async function importParcelsAction(
         parcelNumber: row.parcelNumber,
         surface: row.surface,
         landUse: row.landUse,
+        municipality: row.municipality,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         geometry: row.geometry as any,
         organizationId: ctx.organizationId,

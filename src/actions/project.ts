@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { requireUser } from "@/lib/session"
 import { createAuthContext } from "@/services/base"
-import { projectSchema } from "@/lib/validations/project"
+import { projectSchema, type Technology } from "@/lib/validations/project"
 import { parseGeoJSONString } from "@/lib/validations/geojson"
 import {
   createProject,
@@ -18,12 +18,44 @@ export type ProjectActionState = {
   success?: string
 }
 
+/**
+ * Extrae y valida los campos del formulario de proyecto.
+ * technologies llega como JSON serializado en un hidden input.
+ * connectionPoints llega como JSON serializado en un hidden input.
+ */
 function parseProjectForm(formData: FormData) {
+  let technologies: Technology[] = []
+  let connectionPoints: string[] = []
+
+  try {
+    const raw = formData.get("technologies")
+    technologies = raw ? JSON.parse(raw as string) : []
+  } catch {
+    // Zod se encargará del error de validación
+  }
+
+  try {
+    const raw = formData.get("connectionPoints")
+    connectionPoints = raw ? JSON.parse(raw as string) : []
+  } catch {
+    connectionPoints = []
+  }
+
   return projectSchema.safeParse({
-    name: formData.get("name"),
-    powerMW: formData.get("powerMW"),
-    status: formData.get("status"),
+    name:             formData.get("name"),
+    technologies,
+    status:           formData.get("status"),
+    connectionPoints,
+    cluster:          formData.get("cluster"),
+    developer:        formData.get("developer"),
+    spv:              formData.get("spv"),
   })
+}
+
+/** Suma las potencias de las tecnologías. Devuelve null si ninguna tiene potencia. */
+function computePowerMW(technologies: Technology[]): number | null {
+  const total = technologies.reduce((sum, t) => sum + (t.powerMW ?? 0), 0)
+  return total > 0 ? total : null
 }
 
 export async function createProjectAction(
@@ -40,7 +72,10 @@ export async function createProjectAction(
 
   let project
   try {
-    project = await createProject(ctx, parsed.data)
+    project = await createProject(ctx, {
+      ...parsed.data,
+      powerMW: computePowerMW(parsed.data.technologies),
+    })
   } catch {
     return { error: "Error al crear el proyecto. Inténtalo de nuevo." }
   }
@@ -63,7 +98,10 @@ export async function updateProjectAction(
   const ctx = createAuthContext(user)
 
   try {
-    await updateProject(ctx, id, parsed.data)
+    await updateProject(ctx, id, {
+      ...parsed.data,
+      powerMW: computePowerMW(parsed.data.technologies),
+    })
   } catch {
     return { error: "Error al actualizar el proyecto. Inténtalo de nuevo." }
   }
