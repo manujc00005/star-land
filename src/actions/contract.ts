@@ -4,14 +4,26 @@ import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { requireUser } from "@/lib/session"
 import { createAuthContext } from "@/services/base"
-import { contractSchema } from "@/lib/validations/contract"
+import {
+  contractSchema,
+  CONTRACT_STATUSES,
+  CONTRACT_TYPES,
+  type ContractStatus,
+  type ContractType,
+} from "@/lib/validations/contract"
 import {
   createContract,
   updateContract,
   deleteContract,
+  updateContractStatus,
+  findActiveContractForParcelAndOwner,
 } from "@/services/contract.service"
+import { updateNegotiationStatusByParcel } from "@/services/project-parcel.service"
 
 export type ContractActionState = null | { error: string }
+
+// Tipo de retorno para acciones inline (sin redirect)
+export type PanelActionResult = { error?: string }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -82,4 +94,96 @@ export async function deleteContractAction(id: string): Promise<void> {
   await deleteContract(ctx, id)
   revalidatePath("/contracts")
   redirect("/contracts")
+}
+
+// ── Acciones inline desde el panel de parcela ──────────────────────────────────
+//
+// Estas acciones NO redirigen. Revalidan solo la ruta del proyecto afectado
+// y devuelven { error? } para que el componente cliente pueda mostrar el error.
+// Siguen el patrón useTransition del resto del panel (ver parcel-panel.tsx).
+
+/**
+ * G1 — Cambia el estado de un contrato existente desde el panel de parcela.
+ *
+ * TODO (VF1): Decisión asumida — cambiar "estado de contratación" en el panel
+ * equivale a cambiar Contract.status. Si se decide que deben ser estados
+ * independientes, habrá que añadir ProjectParcel.contractingStatus y migrar.
+ */
+export async function updateLinkedContractStatusAction(
+  contractId: string,
+  status: ContractStatus,
+  projectId: string
+): Promise<PanelActionResult> {
+  if (!CONTRACT_STATUSES.includes(status)) {
+    return { error: "Estado de contrato inválido." }
+  }
+
+  const user = await requireUser()
+  const ctx = createAuthContext(user)
+
+  try {
+    const updated = await updateContractStatus(ctx, contractId, status)
+
+    // D2: Cuando el contrato pasa a ACTIVE → marcar negociación como SIGNED.
+    // Solo si el nuevo estado es ACTIVE para evitar regresiones al cambiar a DRAFT/EXPIRED.
+    if (status === "ACTIVE") {
+      await updateNegotiationStatusByParcel(ctx, projectId, updated.parcelId, "SIGNED")
+    }
+
+    revalidatePath(`/projects/${projectId}`)
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Error al actualizar el estado." }
+  }
+}
+
+/**
+ * G2+G3 — Crea un contrato DRAFT desde el panel de parcela, vinculando
+ * la parcela con un propietario existente de la organización.
+ *
+ * TODO (VF2): Decisión asumida — asignar propietario desde el panel implica
+ * crear un Contract con status DRAFT. Si se quiere una relación directa
+ * ProjectParcel → Owner sin contrato, habría que añadir un campo ownerId
+ * a ProjectParcel en el schema y migrar.
+ */
+export async function createPanelContractAction(
+  parcelId: string,
+  ownerId: string,
+  type: ContractType,
+  projectId: string
+): Promise<PanelActionResult> {
+  if (!parcelId || !ownerId) {
+    return { error: "Parcela y propietario son obligatorios." }
+  }
+  if (!CONTRACT_TYPES.includes(type)) {
+    return { error: "Tipo de contrato inválido." }
+  }
+
+  const user = await requireUser()
+  const ctx = createAuthContext(user)
+
+  // Bloque A: evitar duplicados funcionales.
+  // Se bloquea si ya existe un contrato DRAFT o ACTIVE para esta parcela + propietario.
+  // Un contrato EXPIRED no bloquea: es válido crear uno nuevo tras la expiración.
+  const existing = await findActiveContractForParcelAndOwner(ctx, parcelId, ownerId)
+  if (existing) {
+    const estadoLabel =
+      existing.status === "DRAFT" ? "en borrador" : "activo"
+    return {
+      error: `Ya existe un contrato ${estadoLabel} para esta parcela y propietario. Edítalo desde "Ver contrato completo" o espera a que expire antes de crear uno nuevo.`,
+    }
+  }
+
+  try {
+    await createContract(ctx, {
+      type,
+      status: "DRAFT",
+      parcelId,
+      ownerId,
+    })
+    revalidatePath(`/projects/${projectId}`)
+    return {}
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Error al crear el contrato." }
+  }
 }

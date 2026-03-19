@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import type { AuthContext } from "@/services/base"
 import { geojsonGeometrySchema } from "@/lib/validations/geojson"
 import { geometriesIntersect } from "@/lib/gis/spatial"
+import type { NegotiationStatus } from "@/lib/validations/negotiation-status"
 
 /**
  * Servicio para la relación M:N Project ↔ Parcel.
@@ -148,6 +149,45 @@ export async function updateParcelNotes(
   return db.projectParcel.update({
     where: { id: projectParcelId },
     data: { notes },
+  })
+}
+
+/**
+ * Actualiza el estado de negociación de una parcela en un proyecto concreto.
+ * Operación quirúrgica — verifica pertenencia antes de actualizar.
+ */
+export async function updateNegotiationStatus(
+  ctx: AuthContext,
+  projectParcelId: string,
+  status: NegotiationStatus
+) {
+  const record = await db.projectParcel.findFirst({
+    where: { id: projectParcelId, organizationId: ctx.organizationId },
+  })
+  if (!record) notFound()
+  return db.projectParcel.update({
+    where: { id: projectParcelId },
+    data: { negotiationStatus: status },
+  })
+}
+
+/**
+ * Auto-establece el estado de negociación para todas las ProjectParcel
+ * que crucen projectId + parcelId en esta organización.
+ *
+ * Usado por D2: cuando un contrato pasa a ACTIVE → marcar SIGNED en el panel.
+ * Usa updateMany porque en edge cases podría haber más de un ProjectParcel
+ * para la misma parcela en el mismo proyecto (no debería, pero seguro).
+ */
+export async function updateNegotiationStatusByParcel(
+  ctx: AuthContext,
+  projectId: string,
+  parcelId: string,
+  status: NegotiationStatus
+) {
+  return db.projectParcel.updateMany({
+    where: { projectId, parcelId, organizationId: ctx.organizationId },
+    data: { negotiationStatus: status },
   })
 }
 

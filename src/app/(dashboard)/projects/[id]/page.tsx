@@ -5,12 +5,13 @@ import { getProjectById } from "@/services/project.service"
 import { getProjectParcels } from "@/services/project-parcel.service"
 import { getContractsByProject } from "@/services/contract.service"
 import { getContactsByParcelIds } from "@/services/parcel-contact.service"
+import { getOwners } from "@/services/owner.service"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge"
 import { DeleteProjectButton } from "@/components/projects/delete-project-button"
 import { ProjectTabs } from "@/components/projects/project-tabs"
-import type { TabParcel, TabContract, TabContact } from "@/components/projects/project-tabs"
+import type { TabParcel, TabContract, TabContact, PanelOwner } from "@/components/projects/project-tabs"
 import { type Technology } from "@/lib/validations/project"
 import { ArrowLeft, Download, Zap, Cable, Building2 } from "lucide-react"
 import type { GeoMapFeature } from "@/components/map/geo-map"
@@ -23,11 +24,19 @@ export default async function ProjectDetailPage({ params }: Props) {
   const { id } = await params
   const user = await requireUser()
   const ctx = createAuthContext(user)
-  const [project, projectParcels, projectContracts] = await Promise.all([
+  const [project, projectParcels, projectContracts, rawOwners] = await Promise.all([
     getProjectById(ctx, id),
     getProjectParcels(ctx, id),
     getContractsByProject(ctx, id),
+    getOwners(ctx),
   ])
+
+  // Sólo los campos necesarios para el selector del panel — mínimo privilegio
+  const owners: PanelOwner[] = rawOwners.map((o) => ({
+    id: o.id,
+    name: o.name,
+    nif: o.nif,
+  }))
 
   const parcelIds = projectParcels.map((pp) => pp.parcel.id)
   const allContacts = await getContactsByParcelIds(ctx, parcelIds)
@@ -80,29 +89,27 @@ export default async function ProjectDetailPage({ params }: Props) {
   }
 
   // ── Datos para tabs ────────────────────────────────────────────────────────
-  // Índice contratos por parcelId — prioridad ACTIVE > DRAFT > EXPIRED
-  const CONTRACT_PRIORITY: Record<string, number> = {
-    ACTIVE: 0,
-    DRAFT: 1,
-    EXPIRED: 2,
-  }
-  const bestContractByParcel = new Map<
-    string,
-    (typeof projectContracts)[number]
-  >()
+  // Contratos agrupados por parcelId — ACTIVE primero, luego DRAFT, luego EXPIRED.
+  // Reutilizamos projectContracts (ya cargados) para evitar una query extra.
+  const CONTRACT_PRIORITY: Record<string, number> = { ACTIVE: 0, DRAFT: 1, EXPIRED: 2 }
+  const contractsByParcelId = new Map<string, (typeof projectContracts)>()
   for (const c of projectContracts) {
-    const current = bestContractByParcel.get(c.parcel.id)
-    if (
-      !current ||
-      (CONTRACT_PRIORITY[c.status] ?? 99) <
-        (CONTRACT_PRIORITY[current.status] ?? 99)
-    ) {
-      bestContractByParcel.set(c.parcel.id, c)
-    }
+    const list = contractsByParcelId.get(c.parcel.id) ?? []
+    list.push(c)
+    contractsByParcelId.set(c.parcel.id, list)
+  }
+  for (const [parcelId, list] of contractsByParcelId) {
+    contractsByParcelId.set(
+      parcelId,
+      [...list].sort(
+        (a, b) => (CONTRACT_PRIORITY[a.status] ?? 99) - (CONTRACT_PRIORITY[b.status] ?? 99)
+      )
+    )
   }
 
   const tabParcels: TabParcel[] = projectParcels.map((pp) => {
-    const contract = bestContractByParcel.get(pp.parcel.id) ?? null
+    const ppContracts = contractsByParcelId.get(pp.parcel.id) ?? []
+    const primaryContract = ppContracts[0] ?? null
     const rawContacts = contactsByParcelId.get(pp.parcel.id) ?? []
     const contacts: TabContact[] = rawContacts.map((c) => ({
       id: c.id,
@@ -112,10 +119,20 @@ export default async function ProjectDetailPage({ params }: Props) {
       email: c.email,
       notes: c.notes,
     }))
+    const contracts: TabContract[] = ppContracts.map((c) => ({
+      id: c.id,
+      type: c.type,
+      status: c.status,
+      price: c.price,
+      signedAt: c.signedAt,
+      parcel: { id: c.parcel.id, cadastralRef: c.parcel.cadastralRef },
+      owner: { id: c.owner.id, name: c.owner.name },
+    }))
     return {
       id: pp.id,
       affectation: pp.affectation,
       notes: pp.notes,
+      negotiationStatus: pp.negotiationStatus,
       contacts,
       parcel: {
         id: pp.parcel.id,
@@ -124,11 +141,9 @@ export default async function ProjectDetailPage({ params }: Props) {
         municipality: pp.parcel.municipality,
         landUse: pp.parcel.landUse,
       },
-      contractStatus: contract?.status ?? null,
-      contractType: contract?.type ?? null,
-      contractId: contract?.id ?? null,
-      ownerName: contract?.owner.name ?? null,
-      ownerId: contract?.owner.id ?? null,
+      contracts,
+      primaryOwnerName: primaryContract?.owner.name ?? null,
+      primaryOwnerId: primaryContract?.owner.id ?? null,
     }
   })
 
@@ -249,6 +264,7 @@ export default async function ProjectDetailPage({ params }: Props) {
         mapFeatures={mapFeatures}
         parcels={tabParcels}
         contracts={tabContracts}
+        owners={owners}
       />
     </div>
   )

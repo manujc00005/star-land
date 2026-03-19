@@ -32,6 +32,17 @@ type Props = {
 /**
  * Editor de geometría GeoJSON.
  *
+ * ESTADO: Componente disponible pero no activo en ninguna ruta de proyecto.
+ * La vista detalle (/projects/[id]) y la edición (/projects/[id]/edit) NO lo incluyen
+ * por decisión de diseño: el GeoJSON raw no debe ser visible en la UI de proyecto.
+ *
+ * Usos activos:
+ *   - Ninguno en proyectos (eliminado de las rutas activas).
+ *   - La edición de parcelas (parcel-form.tsx) tiene su propio campo GeoJSON inline.
+ *
+ * TODO: Reemplazar en el futuro por un editor visual con mapa (dibujado sobre Leaflet).
+ * Hasta entonces, mantener este componente como base para esa integración.
+ *
  * Diseñado para convivir con una futura UI visual (mapa + dibujado):
  * - La lógica de validación vive en el servidor (action + geojson.ts)
  * - Este componente solo muestra/edita el texto — reemplazable por un mapa

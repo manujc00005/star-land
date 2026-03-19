@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { db } from "@/lib/db"
 import type { AuthContext } from "@/services/base"
-import type { ContractInput, ContractType, ContractStatus } from "@/lib/validations/contract"
+import type { ContractInput, ContractStatus, ContractType } from "@/lib/validations/contract"
 
 /**
  * Servicio de contratos.
@@ -65,7 +65,73 @@ export async function getContractsByProject(ctx: AuthContext, projectId: string)
   })
 }
 
+/**
+ * Contratos agrupados por parcelId para un conjunto de parcelas.
+ * Una sola query — sin N+1. Ordenados ACTIVE → DRAFT → EXPIRED dentro de cada parcela.
+ */
+export async function getContractsByParcelIds(
+  ctx: AuthContext,
+  parcelIds: string[]
+): Promise<Map<string, Array<{ id: string; type: ContractType; status: ContractStatus; price: number | null; signedAt: Date | null; parcelId: string; owner: { id: string; name: string } }>>> {
+  if (parcelIds.length === 0) return new Map()
+
+  const contracts = await db.contract.findMany({
+    where: { organizationId: ctx.organizationId, parcelId: { in: parcelIds } },
+    include: { owner: { select: { id: true, name: true } } },
+    orderBy: { createdAt: "desc" },
+  })
+
+  // Prioridad ACTIVE(0) > DRAFT(1) > EXPIRED(2)
+  const priority: Record<string, number> = { ACTIVE: 0, DRAFT: 1, EXPIRED: 2 }
+
+  const map = new Map<string, typeof contracts>()
+  for (const c of contracts) {
+    const list = map.get(c.parcelId) ?? []
+    list.push(c)
+    map.set(c.parcelId, list)
+  }
+  for (const [parcelId, list] of map) {
+    map.set(
+      parcelId,
+      [...list].sort(
+        (a, b) => (priority[a.status] ?? 99) - (priority[b.status] ?? 99)
+      )
+    )
+  }
+  return map
+}
+
 // ── Escritura ──────────────────────────────────────────────────────────────────
+
+/**
+ * Devuelve el primer contrato DRAFT o ACTIVE para una combinación
+ * parcelId + ownerId dentro de la organización, o null si no existe.
+ *
+ * EXPIRED no se considera conflicto: es legítimo crear un contrato nuevo
+ * sobre una parcela cuyo contrato anterior ha expirado.
+ *
+ * Usado por createPanelContractAction para evitar duplicados funcionales.
+ *
+ * TODO (pendiente de refinamiento): Si en el futuro una parcela puede tener
+ * contratos simultáneos con distintos propietarios (multipropiedad), esta
+ * lógica deberá revisarse. Actualmente bloquea cualquier DRAFT o ACTIVE
+ * del mismo owner, independientemente del tipo.
+ */
+export async function findActiveContractForParcelAndOwner(
+  ctx: AuthContext,
+  parcelId: string,
+  ownerId: string
+) {
+  return db.contract.findFirst({
+    where: {
+      organizationId: ctx.organizationId,
+      parcelId,
+      ownerId,
+      status: { in: ["DRAFT", "ACTIVE"] },
+    },
+    select: { id: true, status: true, type: true },
+  })
+}
 
 /** Valida que parcela y propietario pertenecen a la org antes de insertar. */
 async function validateRelations(ctx: AuthContext, parcelId: string, ownerId: string) {
@@ -115,4 +181,25 @@ export async function updateContract(
 export async function deleteContract(ctx: AuthContext, id: string) {
   await getContractById(ctx, id) // verifica pertenencia
   return db.contract.delete({ where: { id } })
+}
+
+/**
+ * Actualiza únicamente el estado del contrato.
+ * Operación quirúrgica: no requiere el resto de campos del contrato.
+ * Verifica pertenencia a la organización antes de actualizar.
+ *
+ * TODO (VF1): Decisión asumida — "cambiar estado de contratación" = cambiar Contract.status.
+ * Si en el futuro se quiere un estado independiente en ProjectParcel, habrá que añadir
+ * un campo contractingStatus a ProjectParcel y migrar.
+ */
+export async function updateContractStatus(
+  ctx: AuthContext,
+  id: string,
+  status: ContractStatus
+) {
+  await getContractById(ctx, id) // verifica pertenencia a la org
+  return db.contract.update({
+    where: { id },
+    data: { status },
+  })
 }

@@ -137,8 +137,10 @@ model ProjectParcel {
   affectation    String?
   // Notas de contratación en el contexto de este proyecto.
   // Separadas de Parcel.notes (que serían globales) para permitir notas distintas por proyecto.
-  notes          String?
-  organizationId String
+  notes             String?
+  // Estado operativo de negociación en este proyecto — independiente del estado legal del contrato.
+  negotiationStatus NegotiationStatus @default(SEARCHING)
+  organizationId    String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime     @default(now())
 
@@ -165,6 +167,19 @@ enum ContractStatus {
   EXPIRED
 
   @@map("contract_status")
+}
+
+enum NegotiationStatus {
+  SEARCHING        // Buscando propietario / sin contacto
+  NEGOTIATING      // En negociación activa
+  ACCEPTED         // Acuerdo verbal alcanzado
+  SIGNED           // Contrato firmado (ACTIVE)
+  NOT_NEGOTIATING  // No quiere negociar
+  COMPETITION      // Competencia — otro promotor
+  DUPLICATE        // Duplicado — cubierto por otra parcela
+  TERMINATED       // Proceso cerrado / abandonado
+
+  @@map("negotiation_status")
 }
 
 model Contract {

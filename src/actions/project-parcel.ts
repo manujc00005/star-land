@@ -9,8 +9,13 @@ import {
   assignParcelsToProject,
   updateParcelAffectation,
   updateParcelNotes,
+  updateNegotiationStatus,
   type SpatialMatchResult,
 } from "@/services/project-parcel.service"
+import {
+  NEGOTIATION_STATUSES,
+  type NegotiationStatus,
+} from "@/lib/validations/negotiation-status"
 
 // ── Tipos de estado para useActionState ────────────────────────────────────────
 
@@ -70,6 +75,24 @@ export async function updateParcelNotesAction(
   const user = await requireUser()
   const ctx = createAuthContext(user)
   await updateParcelNotes(ctx, projectParcelId, notes)
+  revalidatePath(`/projects/${projectId}`)
+}
+
+// ── Estado de negociación ──────────────────────────────────────────────────────
+
+/**
+ * Actualiza el estado de negociación de una parcela en un proyecto.
+ * Se llama con useTransition desde ParcelPanel (Col 1).
+ */
+export async function updateNegotiationStatusAction(
+  projectParcelId: string,
+  projectId: string,
+  status: NegotiationStatus
+): Promise<void> {
+  if (!NEGOTIATION_STATUSES.includes(status)) return
+  const user = await requireUser()
+  const ctx = createAuthContext(user)
+  await updateNegotiationStatus(ctx, projectParcelId, status)
   revalidatePath(`/projects/${projectId}`)
 }
 

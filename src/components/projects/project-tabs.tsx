@@ -18,10 +18,24 @@ import { ContractStatusBadge } from "@/components/contracts/contract-status-badg
 import { ContractTypeBadge } from "@/components/contracts/contract-type-badge"
 import type { GeoMapFeature } from "@/components/map/geo-map"
 import type { ContractType, ContractStatus } from "@/lib/validations/contract"
+import {
+  type NegotiationStatus,
+  NEGOTIATION_STATUS_STYLES,
+} from "@/lib/validations/negotiation-status"
 import { Download, Plus, ChevronRight } from "lucide-react"
 import { ParcelPanel } from "@/components/projects/parcels/parcel-panel"
 
 // ── Tipos serializables ────────────────────────────────────────────────────────
+
+/**
+ * Propietario mínimo para el selector del panel de parcela.
+ * Sólo los campos necesarios para el dropdown — evita pasar datos sensibles al cliente.
+ */
+export type PanelOwner = {
+  id: string
+  name: string
+  nif: string
+}
 
 export type TabContact = {
   id: string
@@ -36,6 +50,7 @@ export type TabParcel = {
   id: string           // ProjectParcel.id
   affectation: string | null
   notes: string | null
+  negotiationStatus: NegotiationStatus
   contacts: TabContact[]
   parcel: {
     id: string
@@ -44,12 +59,11 @@ export type TabParcel = {
     municipality: string | null
     landUse: string | null
   }
-  // Contrato más relevante para esta parcela (ACTIVE > DRAFT > EXPIRED > null)
-  contractStatus: ContractStatus | null
-  contractType: ContractType | null
-  contractId: string | null
-  ownerName: string | null
-  ownerId: string | null
+  // Todos los contratos de esta parcela (ACTIVE primero, luego DRAFT, luego EXPIRED)
+  contracts: TabContract[]
+  // Propietario del contrato más relevante — para mostrar en la columna de tabla
+  primaryOwnerName: string | null
+  primaryOwnerId: string | null
 }
 
 export type TabContract = {
@@ -67,6 +81,7 @@ type Props = {
   mapFeatures: GeoMapFeature[]
   parcels: TabParcel[]
   contracts: TabContract[]
+  owners: PanelOwner[]
 }
 
 type Tab = "terrenos" | "permitting"
@@ -78,6 +93,7 @@ export function ProjectTabs({
   mapFeatures,
   parcels,
   contracts,
+  owners,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("terrenos")
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -250,20 +266,18 @@ export function ProjectTabs({
                               {/* Estado Contratación */}
                               <td className="py-2 px-3">
                                 <ContractingStatusBadge
-                                  status={pp.contractStatus}
-                                  type={pp.contractType}
-                                  contractId={pp.contractId}
+                                  status={pp.negotiationStatus}
                                 />
                               </td>
 
                               {/* Propietario */}
                               <td className="py-2 px-3 hidden md:table-cell">
-                                {pp.ownerName && pp.ownerId ? (
+                                {pp.primaryOwnerName && pp.primaryOwnerId ? (
                                   <Link
-                                    href={`/owners/${pp.ownerId}`}
+                                    href={`/owners/${pp.primaryOwnerId}`}
                                     className="hover:underline underline-offset-4 text-sm"
                                   >
-                                    {pp.ownerName}
+                                    {pp.primaryOwnerName}
                                   </Link>
                                 ) : (
                                   <span className="text-muted-foreground text-xs">—</span>
@@ -297,12 +311,10 @@ export function ProjectTabs({
                                     projectId={projectId}
                                     parcelId={pp.parcel.id}
                                     notes={pp.notes}
+                                    negotiationStatus={pp.negotiationStatus}
+                                    contracts={pp.contracts}
                                     contacts={pp.contacts}
-                                    ownerName={pp.ownerName}
-                                    ownerId={pp.ownerId}
-                                    contractStatus={pp.contractStatus}
-                                    contractType={pp.contractType}
-                                    contractId={pp.contractId}
+                                    owners={owners}
                                   />
                                 </td>
                               </tr>
@@ -473,45 +485,13 @@ function LegendDot({
   )
 }
 
-// Estado de contratación derivado (no un enum de BD — es UI)
-const CONTRACTING_STATUS_STYLES: Record<
-  string,
-  { label: string; className: string }
-> = {
-  ACTIVE:  { label: "Activo",          className: "bg-green-100 text-green-700" },
-  DRAFT:   { label: "En negociación",  className: "bg-blue-100 text-blue-700" },
-  EXPIRED: { label: "Expirado",        className: "bg-orange-100 text-orange-700" },
-  NONE:    { label: "Sin contrato",    className: "bg-slate-100 text-slate-500" },
-}
-
-function ContractingStatusBadge({
-  status,
-  type,
-  contractId,
-}: {
-  status: ContractStatus | null
-  type: ContractType | null
-  contractId: string | null
-}) {
-  const key = status ?? "NONE"
-  const style = CONTRACTING_STATUS_STYLES[key] ?? CONTRACTING_STATUS_STYLES.NONE
-
-  const badge = (
+function ContractingStatusBadge({ status }: { status: NegotiationStatus }) {
+  const style = NEGOTIATION_STATUS_STYLES[status]
+  return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${style.className}`}
     >
-      {type && status
-        ? `${type === "RENTAL" ? "Arr." : "C/V"} · ${style.label}`
-        : style.label}
+      {style.label}
     </span>
   )
-
-  if (contractId && status) {
-    return (
-      <Link href={`/contracts/${contractId}`} className="hover:opacity-80">
-        {badge}
-      </Link>
-    )
-  }
-  return badge
 }

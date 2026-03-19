@@ -20,7 +20,32 @@
       "Bash(npx next:*)",
       "Bash(docker ps:*)",
       "Bash(mkdir -p \"prisma/migrations/20260318000000_init\")",
-      "Bash(\"prisma/migrations/20260318000000_init/migration.sql\")"
+      "Bash(\"prisma/migrations/20260318000000_init/migration.sql\")",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(./node_modules/.bin/prisma migrate:*)",
+      "Bash(npm --prefix \"C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land\" run db:migrate)",
+      "Bash(cmd /c \"cd C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land && node_modules\\\\.bin\\\\prisma migrate dev --name add_negotiation_status\")",
+      "Bash(cmd /c \"cd C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land && node_modules\\\\.bin\\\\prisma migrate dev --name add_negotiation_status 2>&1\")",
+      "Bash(powershell -Command \"cd ''C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land''; node_modules\\\\.bin\\\\prisma migrate dev --name add_negotiation_status\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land''; & ''.\\\\node_modules\\\\.bin\\\\prisma'' migrate dev --name add_negotiation_status\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land''; Get-ChildItem node_modules\\\\.bin | Where-Object { $_.Name -like ''*prisma*'' }\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land''; Get-ChildItem node_modules -Directory | Select-Object -First 10 Name\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land''; Get-ChildItem node_modules -Directory | Select-Object Name\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land''; Get-ChildItem node_modules\\\\.cache -Directory | Select-Object Name\")",
+      "Bash(powershell -Command \"where.exe prisma 2>&1; where.exe npx 2>&1; where.exe node 2>&1\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land''; npm install\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land''; & ''.\\\\node_modules\\\\.bin\\\\prisma.cmd'' migrate dev --name add_negotiation_status\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land''; docker compose up -d\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land''; & ''.\\\\node_modules\\\\.bin\\\\prisma.cmd'' generate\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land''; & ''.\\\\node_modules\\\\.bin\\\\tsc.cmd'' --noEmit 2>&1\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\Guinda\\\\Documents\\\\Chico\\\\star-land''; & ''.\\\\node_modules\\\\.bin\\\\next.cmd'' build 2>&1\")",
+      "Bash(ls -la /c/Users/Guinda/Documents/Chico/star-land/src/app/\\\\\\(dashboard\\\\\\)/projects/)",
+      "Bash(cat '/c/Users/Guinda/Documents/Chico/star-land/src/app/\\(dashboard\\)/projects/[id]/page.tsx')",
+      "Bash(cat '/c/Users/Guinda/Documents/Chico/star-land/src/app/\\(dashboard\\)/projects/[id]/parcels/page.tsx')",
+      "Bash(cat '/c/Users/Guinda/Documents/Chico/star-land/src/app/\\(dashboard\\)/parcels/page.tsx')",
+      "Bash(cat '/c/Users/Guinda/Documents/Chico/star-land/src/app/\\(dashboard\\)/owners/page.tsx')",
+      "Bash(cat '/c/Users/Guinda/Documents/Chico/star-land/src/app/\\(dashboard\\)/contracts/page.tsx')"
     ]
   }
 }
