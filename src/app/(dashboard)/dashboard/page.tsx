@@ -1,62 +1,72 @@
 import { requireUser } from "@/lib/session"
 import { createAuthContext } from "@/services/base"
 import { getOrganizationById } from "@/services/organization.service"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FolderKanban, MapPin, Users, FileText } from "lucide-react"
-
-const statsCards = [
-  { title: "Proyectos", value: "—", icon: FolderKanban, description: "Proyectos activos" },
-  { title: "Parcelas", value: "—", icon: MapPin, description: "Parcelas registradas" },
-  { title: "Propietarios", value: "—", icon: Users, description: "Propietarios en base de datos" },
-  { title: "Contratos", value: "—", icon: FileText, description: "Contratos gestionados" },
-]
+import { getProjects } from "@/services/project.service"
+import { DashboardClient, type ProjectSummary } from "@/components/dashboard/dashboard-client"
+import type { ProjectMarker } from "@/components/dashboard/dashboard-map"
 
 export default async function DashboardPage() {
-  // requireUser() redirige a /login si no hay sesión — garantía de auth
   const user = await requireUser()
   const ctx = createAuthContext(user)
 
-  // Todos los datos se obtienen a través del servicio con ctx (organizationId)
-  const org = await getOrganizationById(ctx)
+  const [org, projects] = await Promise.all([
+    getOrganizationById(ctx),
+    getProjects(ctx),
+  ])
 
   const firstName = user.name?.split(" ")[0] ?? "Usuario"
 
+  // Compute centroid for each project that has a polygon geometry.
+  // Import turf server-side so it never reaches the client bundle.
+  const { centroid: turfCentroid } = await import("@turf/turf")
+
+  const allMarkers: ProjectMarker[] = []
+  const projectsData: ProjectSummary[] = []
+
+  for (const p of projects) {
+    const techs = (p.technologies ?? []) as Array<{ type: string; powerMW?: number }>
+
+    projectsData.push({
+      id: p.id,
+      name: p.name,
+      powerMW: p.powerMW,
+      developer: p.developer,
+      status: p.status,
+      technologies: techs,
+      hasGeometry: p.geometry != null,
+    })
+
+    if (p.geometry != null) {
+      try {
+        const center = turfCentroid({
+          type: "Feature",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          geometry: p.geometry as any,
+          properties: {},
+        })
+        const [lng, lat] = center.geometry.coordinates
+        allMarkers.push({
+          id: p.id,
+          name: p.name,
+          lat,
+          lng,
+          powerMW: p.powerMW,
+          developer: p.developer,
+          status: p.status,
+          technologies: techs,
+        })
+      } catch {
+        // Geometry inválida — omitir del mapa
+      }
+    }
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Bienvenido, {firstName}
-        </h1>
-        <p className="text-muted-foreground">
-          {org?.name} · Resumen de actividad
-        </p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statsCards.map(({ title, value, icon: Icon, description }) => (
-          <Card key={title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{title}</CardTitle>
-              <Icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{value}</div>
-              <p className="text-xs text-muted-foreground">{description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Actividad reciente</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            No hay actividad reciente. Empieza creando un proyecto.
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <DashboardClient
+      firstName={firstName}
+      orgName={org?.name ?? ""}
+      projects={projectsData}
+      allMarkers={allMarkers}
+    />
   )
 }
