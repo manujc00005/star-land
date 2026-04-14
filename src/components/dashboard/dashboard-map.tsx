@@ -34,6 +34,8 @@ export function DashboardMap({ markers, height = 550 }: Props) {
     if (!containerRef.current) return
     if (mapRef.current) return
 
+    let cancelled = false
+
     const initMap = async () => {
       const L = (await import("leaflet")).default
 
@@ -46,16 +48,54 @@ export function DashboardMap({ markers, height = 550 }: Props) {
         shadowUrl: "https://unpkg.com/leaflet@1/dist/images/marker-shadow.png",
       })
 
+      if (cancelled) return
+
       const map = L.map(containerRef.current!, {
         zoomControl: true,
         scrollWheelZoom: true,
       })
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:
-          '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+      // --- Base layers ---
+      const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
-      }).addTo(map)
+      })
+
+      const topo = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '© <a href="https://opentopomap.org">OpenTopoMap</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 17,
+      })
+
+      const satellite = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+          attribution: '© <a href="https://www.esri.com">Esri</a>',
+          maxZoom: 19,
+        },
+      )
+
+      // --- Overlay: Catastro parcels (WMS) ---
+      const catastro = L.tileLayer.wms(
+        "https://ovc.catastro.meh.es/Cartografia/WMS/ServidorWMS.aspx",
+        {
+          layers: "Catastro",
+          format: "image/png",
+          transparent: true,
+          attribution: '© <a href="https://www.sedecatastro.gob.es">Catastro</a>',
+        },
+      )
+
+      // Start with topo as default
+      topo.addTo(map)
+
+      L.control
+        .layers(
+          { Topográfico: topo, Estándar: osm, Satélite: satellite },
+          { Parcelas: catastro },
+          { position: "topright" },
+        )
+        .addTo(map)
 
       // Default view: España
       map.setView([40.4168, -3.7038], 6)
@@ -96,6 +136,7 @@ export function DashboardMap({ markers, height = 550 }: Props) {
     initMap()
 
     return () => {
+      cancelled = true
       mapRef.current?.remove()
       mapRef.current = null
     }

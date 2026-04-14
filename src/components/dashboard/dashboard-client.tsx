@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { FolderKanban, Filter, X } from "lucide-react"
+import { FolderKanban, Filter, X, ChevronDown, Check } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { ProjectMarker } from "./dashboard-map"
@@ -44,7 +44,7 @@ export function DashboardClient({ firstName, orgName, projects, allMarkers }: Pr
   const [filterTech, setFilterTech] = useState("")
   const [filterPowerMin, setFilterPowerMin] = useState("")
   const [filterDeveloper, setFilterDeveloper] = useState("")
-  const [filterName, setFilterName] = useState("")
+  const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(new Set())
 
   // Unique technology types across all projects for the select options
   const techOptions = useMemo(() => {
@@ -58,12 +58,12 @@ export function DashboardClient({ firstName, orgName, projects, allMarkers }: Pr
   }, [projects])
 
   const hasActiveFilters =
-    filterTech !== "" || filterPowerMin !== "" || filterDeveloper !== "" || filterName !== ""
+    filterTech !== "" || filterPowerMin !== "" || filterDeveloper !== "" || selectedProjectIds.size > 0
 
   // Apply filters
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
-      if (filterName && !p.name.toLowerCase().includes(filterName.toLowerCase())) return false
+      if (selectedProjectIds.size > 0 && !selectedProjectIds.has(p.id)) return false
       if (filterTech && !p.technologies.some((t) => t.type === filterTech)) return false
       if (filterDeveloper && !(p.developer ?? "").toLowerCase().includes(filterDeveloper.toLowerCase())) return false
       if (filterPowerMin) {
@@ -72,7 +72,7 @@ export function DashboardClient({ firstName, orgName, projects, allMarkers }: Pr
       }
       return true
     })
-  }, [projects, filterName, filterTech, filterDeveloper, filterPowerMin])
+  }, [projects, selectedProjectIds, filterTech, filterDeveloper, filterPowerMin])
 
   // Only show map markers for filtered projects that have geometry
   const filteredMarkerIds = new Set(filteredProjects.map((p) => p.id))
@@ -82,7 +82,24 @@ export function DashboardClient({ firstName, orgName, projects, allMarkers }: Pr
     setFilterTech("")
     setFilterPowerMin("")
     setFilterDeveloper("")
-    setFilterName("")
+    setSelectedProjectIds(new Set())
+  }
+
+  const toggleProject = (id: string) => {
+    setSelectedProjectIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleAllProjects = () => {
+    if (selectedProjectIds.size === projects.length) {
+      setSelectedProjectIds(new Set())
+    } else {
+      setSelectedProjectIds(new Set(projects.map((p) => p.id)))
+    }
   }
 
   return (
@@ -134,7 +151,7 @@ export function DashboardClient({ firstName, orgName, projects, allMarkers }: Pr
             Filtrar
             {hasActiveFilters && (
               <span className="ml-1 rounded-full bg-primary-foreground text-primary text-xs px-1.5 py-0.5 leading-none font-semibold">
-                {[filterTech, filterPowerMin, filterDeveloper, filterName].filter(Boolean).length}
+                {[filterTech, filterPowerMin, filterDeveloper, selectedProjectIds.size > 0 ? "x" : ""].filter(Boolean).length}
               </span>
             )}
           </Button>
@@ -155,16 +172,15 @@ export function DashboardClient({ firstName, orgName, projects, allMarkers }: Pr
         </div>
 
         {filterOpen && (
-          <div className="rounded-md border bg-card p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Nombre */}
+          <div className="relative z-[1100] rounded-md border bg-card p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Proyectos (multi-select) */}
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-muted-foreground">Nombre</label>
-              <input
-                type="text"
-                placeholder="Buscar proyecto..."
-                value={filterName}
-                onChange={(e) => setFilterName(e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              <label className="text-xs font-medium text-muted-foreground">Proyecto</label>
+              <ProjectMultiSelect
+                projects={projects}
+                selected={selectedProjectIds}
+                onToggle={toggleProject}
+                onToggleAll={toggleAllProjects}
               />
             </div>
 
@@ -224,6 +240,105 @@ export function DashboardClient({ firstName, orgName, projects, allMarkers }: Pr
           </p>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Multi-select dropdown for projects ────────────────────────────────────────
+
+function ProjectMultiSelect({
+  projects,
+  selected,
+  onToggle,
+  onToggleAll,
+}: {
+  projects: ProjectSummary[]
+  selected: Set<string>
+  onToggle: (id: string) => void
+  onToggleAll: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open])
+
+  const allSelected = selected.size === projects.length
+  const label =
+    selected.size === 0
+      ? "Todos los proyectos"
+      : selected.size === 1
+        ? projects.find((p) => selected.has(p.id))?.name ?? "1 proyecto"
+        : `${selected.size} proyectos`
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+      >
+        <span className={selected.size === 0 ? "text-muted-foreground" : ""}>
+          {label}
+        </span>
+        <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-[1100] mt-1 w-full rounded-md border bg-popover shadow-md">
+          {/* Select all */}
+          <button
+            type="button"
+            onClick={onToggleAll}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent border-b"
+          >
+            <span
+              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border ${
+                allSelected ? "border-primary bg-primary text-primary-foreground" : "border-input"
+              }`}
+            >
+              {allSelected && <Check className="h-3 w-3" />}
+            </span>
+            <span className="font-medium">Todos</span>
+          </button>
+
+          {/* Project list */}
+          <div className="max-h-56 overflow-y-auto py-1">
+            {projects.map((p) => {
+              const isSelected = selected.has(p.id)
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => onToggle(p.id)}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border ${
+                      isSelected ? "border-primary bg-primary text-primary-foreground" : "border-input"
+                    }`}
+                  >
+                    {isSelected && <Check className="h-3 w-3" />}
+                  </span>
+                  <span className="truncate">{p.name}</span>
+                  {p.powerMW != null && (
+                    <span className="ml-auto text-xs text-muted-foreground shrink-0">
+                      {p.powerMW} MW
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

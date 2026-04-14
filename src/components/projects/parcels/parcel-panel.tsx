@@ -491,9 +491,10 @@ export function ParcelPanel({
 // ── Sub-componente: fila de contrato ───────────────────────────────────────────
 
 const STATUS_BADGE: Record<ContractStatus, string> = {
-  DRAFT:   "bg-blue-100 text-blue-700",
-  ACTIVE:  "bg-green-100 text-green-700",
-  EXPIRED: "bg-orange-100 text-orange-600",
+  DRAFT:           "bg-blue-100 text-blue-700",
+  ACTIVE:          "bg-green-100 text-green-700",
+  EXPIRED:         "bg-orange-100 text-orange-600",
+  SIGNED_ADDENDUM: "bg-purple-100 text-purple-700",
 }
 
 function ContractItem({

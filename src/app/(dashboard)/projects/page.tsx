@@ -4,7 +4,7 @@ import { createAuthContext } from "@/services/base"
 import { getProjects } from "@/services/project.service"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { FolderKanban, Plus } from "lucide-react"
+import { FolderKanban, Plus, Upload } from "lucide-react"
 import { ProjectsTable } from "@/components/projects/projects-table"
 
 export default async function ProjectsPage() {
@@ -21,12 +21,20 @@ export default async function ProjectsPage() {
             Gestiona tus proyectos de energías renovables
           </p>
         </div>
-        <Button asChild>
-          <Link href="/projects/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo proyecto
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/projects/import">
+              <Upload className="mr-2 h-4 w-4" />
+              Importar
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/projects/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo proyecto
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {projects.length === 0 ? (

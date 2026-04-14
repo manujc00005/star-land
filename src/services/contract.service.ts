@@ -60,7 +60,17 @@ export async function getContractsByProject(ctx: AuthContext, projectId: string)
 
   return db.contract.findMany({
     where: { organizationId: ctx.organizationId, parcelId: { in: parcelIds } },
-    include: { parcel: true, owner: true },
+    include: {
+      parcel: true,
+      owner: true,
+      contractParcels: {
+        include: {
+          parcel: {
+            select: { id: true, cadastralRef: true, municipality: true, surface: true },
+          },
+        },
+      },
+    },
     orderBy: { createdAt: "desc" },
   })
 }

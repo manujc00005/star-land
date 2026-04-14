@@ -51,7 +51,25 @@
       "Bash(node -e ':*)",
       "Bash(node -e \"const d=require\\('/dev/stdin'\\); console.log\\(JSON.stringify\\({scripts:d.scripts, prisma:d.prisma}, null, 2\\)\\)\")",
       "Bash(node -e \"const fs=require\\('fs'\\); const p=JSON.parse\\(fs.readFileSync\\('package.json'\\)\\); console.log\\(JSON.stringify\\({scripts:p.scripts, prisma:p.prisma}, null, 2\\)\\)\")",
-      "Bash(node prisma/seed-jaen.mjs)"
+      "Bash(node prisma/seed-jaen.mjs)",
+      "Bash(tasklist /fi \"imagename eq node.exe\" /fo csv)",
+      "Bash(cmd /c \"tasklist /fi \\\\\"imagename eq node.exe\\\\\" /fo csv\")",
+      "Bash(powershell -Command \"Get-Process node -ErrorAction SilentlyContinue | Select-Object Id,ProcessName | Format-Table\")",
+      "Bash(powershell -Command \"Get-CimInstance Win32_Process -Filter \\\\\"Name='node.exe'\\\\\" | Select-Object ProcessId,CommandLine | Format-List\")",
+      "Bash(powershell \"Get-CimInstance Win32_Process -Filter 'Name=''node.exe''' | Select-Object ProcessId,CommandLine | Format-List\")",
+      "Bash(wmic process:*)",
+      "Bash(powershell -Command \"Stop-Process -Name node -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; & npx prisma generate\")",
+      "Bash(python3 -c ':*)",
+      "Bash(where python:*)",
+      "Bash(where python3:*)",
+      "Bash(where py:*)",
+      "Bash(C:\\\\Python313\\\\python.exe -c \"import pandas as pd; print\\('ok'\\)\")",
+      "Bash(C:\\\\Python313\\\\python.exe -m pip install pandas openpyxl)",
+      "Bash(py -3.13 -c \"import pandas; print\\('ok'\\)\")",
+      "Bash(py -3.13 -m pip install pandas openpyxl)",
+      "Bash(py -3.13 -c ':*)",
+      "Bash(SEED_ORG_ID=\"seed_org_manu_es_001\" SEED_USER_EMAIL=\"manu@manu.es\" SEED_USER_NAME=\"Manu\" node prisma/seed-jaen.mjs)",
+      "Bash(SEED_ORG_ID=\"cmny7wzk80000wkfom9xtq2xl\" SEED_USER_EMAIL=\"manu@manu.es\" SEED_USER_NAME=\"Manuel Jimenez\" node prisma/seed-jaen.mjs)"
     ]
   }
 }

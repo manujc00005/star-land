@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StarLand - Plan de Rediseno Vista Interna de Proyecto</title>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+    --primary: #2563eb;
+    --primary-light: #dbeafe;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --amber: #d97706;
+    --amber-light: #fef3c7;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --blue: #2563eb;
+    --blue-light: #dbeafe;
+    --purple: #7c3aed;
+    --purple-light: #ede9fe;
+    --slate: #475569;
+    --slate-light: #f1f5f9;
+    --zinc: #71717a;
+    --zinc-light: #f4f4f5;
+    --expired-bg: #f9fafb;
+    --panel-bg: #f1f5f9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  /* Phase navigator */
+  .phase-nav { display: flex; gap: 4px; margin-bottom: 32px; flex-wrap: wrap; background: var(--card); border-radius: 12px; padding: 6px; border: 1px solid var(--border); }
+  .phase-btn { padding: 10px 16px; border: none; background: none; cursor: pointer; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--muted); transition: all 0.2s; white-space: nowrap; }
+  .phase-btn:hover { background: var(--slate-light); color: var(--text); }
+  .phase-btn.active { background: var(--primary); color: white; }
+  .phase-btn .phase-num { font-size: 11px; opacity: 0.7; margin-right: 4px; }
+
+  .phase-content { display: none; }
+  .phase-content.active { display: block; }
+
+  /* Phase header */
+  .phase-header { margin-bottom: 24px; }
+  .phase-header h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .phase-header .subtitle { color: var(--muted); font-size: 14px; }
+  .phase-header .tags { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .tag-schema { background: var(--purple-light); color: var(--purple); }
+  .tag-frontend { background: var(--blue-light); color: var(--blue); }
+  .tag-backend { background: var(--amber-light); color: var(--amber); }
+  .tag-no-schema { background: var(--green-light); color: var(--green); }
+
+  /* Section */
+  .section { margin-bottom: 32px; }
+  .section h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+  .section h4 { font-size: 14px; font-weight: 600; margin: 16px 0 8px; color: var(--muted); }
+
+  /* Task list */
+  .tasks { list-style: none; }
+  .tasks li { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; display: flex; align-items: flex-start; gap: 8px; }
+  .tasks li:last-child { border-bottom: none; }
+  .task-icon { width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--border); flex-shrink: 0; margin-top: 1px; }
+
+  /* Comparison layout */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 20px 0; }
+  .compare-single { grid-template-columns: 1fr; }
+  .compare-col { background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+  .compare-label { padding: 10px 16px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+  .compare-label.before { background: #fef2f2; color: #991b1b; }
+  .compare-label.after { background: #f0fdf4; color: #166534; }
+  .compare-label.new { background: #eff6ff; color: #1e40af; }
+  .compare-body { padding: 16px; }
+
+  /* Mockup styles */
+  .mockup { font-size: 12px; color: var(--text); }
+
+  /* Mock tabs */
+  .mock-tabs { display: flex; margin-bottom: 12px; }
+  .mock-tab { padding: 8px 16px; font-size: 12px; font-weight: 500; cursor: default; border-bottom: 2px solid transparent; color: var(--muted); }
+  .mock-tab.active-old { border-bottom-color: var(--text); color: var(--text); }
+
+  /* New tabs (Phase 1) */
+  .mock-tabs-new { display: flex; gap: 4px; margin-bottom: 12px; background: var(--slate-light); border-radius: 8px; padding: 3px; }
+  .mock-tab-new { padding: 6px 14px; font-size: 12px; font-weight: 500; cursor: default; border-radius: 6px; color: var(--muted); }
+  .mock-tab-new.active-new { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-weight: 600; }
+
+  /* Mock card */
+  .mock-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; background: var(--card); }
+  .mock-card-header { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .mock-card-header h5 { font-size: 13px; font-weight: 600; }
+  .mock-card-header .desc { font-size: 11px; color: var(--muted); }
+  .mock-card-body { padding: 10px 12px; }
+
+  /* Mock table */
+  .mock-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .mock-table th { text-align: left; padding: 6px 8px; background: var(--slate-light); color: var(--muted); font-weight: 600; font-size: 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .mock-table th.sortable { cursor: default; }
+  .mock-table th.sortable::after { content: ' \2195'; font-size: 9px; opacity: 0.5; }
+  .mock-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .mock-table tr:last-child td { border-bottom: none; }
+  .mock-table tr.expired-row { background: var(--expired-bg); }
+  .mock-table tr.clickable:hover { background: var(--slate-light); cursor: pointer; }
+
+  /* Mock badges */
+  .badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+  .badge-amber { background: var(--amber-light); color: var(--amber); }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-slate { background: var(--slate-light); color: var(--slate); }
+  .badge-zinc { background: var(--zinc-light); color: var(--zinc); }
+  .badge-addendum { background: var(--green-light); color: var(--green); }
+
+  /* Mock button */
+  .mock-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 11px; background: var(--card); cursor: default; }
+  .mock-btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+  .mock-btn.ghost { border: none; color: var(--primary); }
+  .mock-btn.danger { border-color: var(--red); color: var(--red); }
+  .mock-btn.sm { padding: 3px 8px; font-size: 10px; }
+
+  /* Mock map */
+  .mock-map { background: linear-gradient(135deg, #2d5016 0%, #3a6b1e 20%, #4a7c28 40%, #5c8f32 60%, #3a6b1e 80%, #2d5016 100%); border-radius: 6px; height: 180px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.7); font-size: 11px; position: relative; overflow: hidden; }
+  .mock-map::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.03) 20px, rgba(255,255,255,0.03) 40px); }
+  .mock-map .map-label { position: relative; z-index: 1; text-align: center; }
+  .mock-map .kmz-btn { position: absolute; top: 8px; right: 8px; z-index: 2; background: white; color: var(--text); padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+
+  .mock-map-osm { background: linear-gradient(135deg, #e8e4d8 0%, #d4d0c4 30%, #c8c4b8 60%, #bcb8ac 100%); border-radius: 6px; height: 180px; display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.4); font-size: 11px; position: relative; }
+
+  /* Split panel */
+  .split-panel { display: grid; grid-template-columns: 40% 60%; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+  .split-left { padding: 14px; background: var(--card); border-right: 1px solid var(--border); }
+  .split-right { background: var(--card); }
+
+  /* Stats */
+  .stat-group { margin-bottom: 12px; }
+  .stat-group:last-child { margin-bottom: 0; }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .stat-total { font-size: 20px; font-weight: 700; color: var(--primary); }
+  .stat-sub { font-size: 10px; color: var(--muted); padding-left: 8px; line-height: 1.8; }
+  .stat-sub .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+  .dot-green { background: var(--green); }
+  .dot-blue { background: var(--blue); }
+  .dot-slate { background: var(--slate); }
+
+  /* Expand panel */
+  .expand-panel { background: var(--panel-bg); border-top: 1px solid var(--border); padding: 14px; }
+  .expand-row { background: var(--panel-bg); }
+  .expand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .expand-section { margin-bottom: 12px; }
+  .expand-section h6 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 8px; }
+
+  /* Mock input */
+  .mock-input { width: 100%; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; background: var(--card); color: var(--muted); }
+  .mock-textarea { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; background: var(--card); color: var(--muted); resize: none; height: 50px; }
+  .mock-select { width: 100%; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; background: var(--card); color: var(--text); }
+
+  /* Arrow icon */
+  .arrow { display: inline-block; font-size: 10px; color: var(--muted); margin-right: 4px; }
+  .arrow.expanded { transform: rotate(90deg); }
+
+  /* Footer buttons */
+  .panel-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .edit-more-hint { display: block; font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+  /* Delete line */
+  .strikethrough { text-decoration: line-through; color: var(--red); opacity: 0.5; }
+
+  /* Toolbar */
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .toolbar-group { display: flex; gap: 6px; }
+
+  /* Modal */
+  .mock-modal { background: var(--card); border: 2px solid var(--border); border-radius: 10px; padding: 16px; max-width: 320px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+  .mock-modal h6 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .mock-modal p { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+  .mock-modal .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .compare { grid-template-columns: 1fr; }
+    .split-panel { grid-template-columns: 1fr; }
+    .expand-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Notes */
+  .note { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #92400e; margin: 12px 0; }
+  .note strong { font-weight: 600; }
+
+  /* Schema change block */
+  .schema-block { background: var(--purple-light); border-radius: 8px; padding: 12px 16px; margin: 12px 0; font-size: 12px; }
+  .schema-block h6 { font-size: 12px; font-weight: 700; color: var(--purple); margin-bottom: 6px; }
+  .schema-block pre { font-family: 'SF Mono', Monaco, monospace; font-size: 11px; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+
+  /* Header */
+  .page-header { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid var(--border); }
+  .page-header h1 { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+  .page-header p { color: var(--muted); font-size: 14px; }
+
+  /* Files affected */
+  .files { background: var(--slate-light); border-radius: 8px; padding: 10px 14px; margin: 12px 0; }
+  .files h6 { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .files code { display: block; font-family: 'SF Mono', Monaco, monospace; font-size: 11px; color: var(--text); padding: 2px 0; }
+  .files code .new { color: var(--green); }
+  .files code .mod { color: var(--amber); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="page-header">
+  <h1>Rediseno Vista Interna de Proyecto</h1>
+  <p>Plan de implementacion por fases con mockups interactivos</p>
+</div>
+
+<!-- Phase Navigation -->
+<nav class="phase-nav">
+  <button class="phase-btn active" onclick="showPhase(0)"><span class="phase-num">ACTUAL</span> Estado actual</button>
+  <button class="phase-btn" onclick="showPhase(1)"><span class="phase-num">F1</span> Tabs + Layout</button>
+  <button class="phase-btn" onclick="showPhase(2)"><span class="phase-num">F2</span> Split Panel + Mapa</button>
+  <button class="phase-btn" onclick="showPhase(3)"><span class="phase-num">F3</span> Tabla Contratos</button>
+  <button class="phase-btn" onclick="showPhase(4)"><span class="phase-num">F4</span> Panel Expandible</button>
+  <button class="phase-btn" onclick="showPhase(5)"><span class="phase-num">F5</span> Simplificar Parcelas</button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- ESTADO ACTUAL -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="phase-content active" id="phase-0">
+  <div class="phase-header">
+    <h2>Estado Actual</h2>
+    <p class="subtitle">Asi se ve actualmente la vista interna de proyecto (tab "Gestion Terrenos")</p>
+  </div>
+
+  <div class="compare compare-single">
+    <div class="compare-col">
+      <div class="compare-label before">Vista actual completa</div>
+      <div class="compare-body">
+        <div class="mockup">
+
+          <!-- Header buttons -->
+          <div class="toolbar">
+            <div>
+              <div style="font-size:16px; font-weight:700;">Proyecto Solar Andujar</div>
+              <span class="badge badge-blue" style="margin-top:4px;">En Desarrollo</span>
+            </div>
+            <div class="toolbar-group">
+              <span class="mock-btn sm">KML</span>
+              <span class="mock-btn sm">Editar</span>
+              <span class="mock-btn sm danger">Eliminar</span>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="mock-tabs" style="border-bottom: 1px solid var(--border);">
+            <span class="mock-tab active-old">Gestion Terrenos <span class="badge badge-slate" style="font-size:9px;">12</span></span>
+            <span class="mock-tab">Permitting</span>
+          </div>
+
+          <!-- Mapa -->
+          <div class="mock-card">
+            <div class="mock-card-header">
+              <h5>Mapa</h5>
+              <div class="desc">
+                <span style="color:#2563eb;">&#9632;</span> Recinto &nbsp;
+                <span style="color:#16a34a;">&#9632;</span> Con contrato &nbsp;
+                <span style="color:#d97706;">&#9632;</span> Sin contrato
+              </div>
+            </div>
+            <div class="mock-card-body" style="padding:8px;">
+              <div class="mock-map-osm">
+                <span>OpenStreetMap (capa por defecto)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Toolbar -->
+          <div class="toolbar">
+            <span class="mock-btn sm">Detectar parcelas</span>
+            <div class="toolbar-group">
+              <span class="mock-btn sm">Exportar KML</span>
+              <span class="mock-btn sm primary">+ Anadir parcelas</span>
+            </div>
+          </div>
+
+          <!-- Parcelas PRIMERO (orden actual) -->
+          <div class="mock-card">
+            <div class="mock-card-header">
+              <h5>Parcelas afectadas (12)</h5>
+              <div class="desc">Parcelas catastrales vinculadas a este proyecto</div>
+            </div>
+            <div class="mock-card-body" style="padding:0;">
+              <table class="mock-table">
+                <thead>
+                  <tr>
+                    <th style="width:24px;"></th>
+                    <th>Municipio</th>
+                    <th>Ref. Catastral</th>
+                    <th style="text-align:right;">Superficie</th>
+                    <th>Estado Contratacion</th>
+                    <th>Propietario</th>
+                    <th>Afeccion</th>
+                    <th style="width:30px;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="arrow">&#9654;</span></td>
+                    <td>Andujar</td>
+                    <td style="font-family:monospace;font-size:10px;color:var(--primary);">23020A00600021</td>
+                    <td style="text-align:right;">12.500 m2</td>
+                    <td><span class="badge badge-green">Firmado</span></td>
+                    <td style="color:var(--primary);">Juan Perez</td>
+                    <td style="font-size:10px;">Planta</td>
+                    <td style="color:var(--red);font-size:10px;">&#128465;</td>
+                  </tr>
+                  <tr>
+                    <td><span class="arrow">&#9654;</span></td>
+                    <td>Andujar</td>
+                    <td style="font-family:monospace;font-size:10px;color:var(--primary);">23020A00600035</td>
+                    <td style="text-align:right;">8.200 m2</td>
+                    <td><span class="badge badge-blue">En negociacion</span></td>
+                    <td style="color:var(--primary);">Maria Lopez</td>
+                    <td style="font-size:10px;">Planta</td>
+                    <td style="color:var(--red);font-size:10px;">&#128465;</td>
+                  </tr>
+                  <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:6px;font-size:10px;">... 10 filas mas ...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Contratos DESPUES (orden actual) -->
+          <div class="mock-card">
+            <div class="mock-card-header">
+              <h5>Contratos (5)</h5>
+              <div class="desc">Contratos sobre las parcelas vinculadas</div>
+            </div>
+            <div class="mock-card-body" style="padding:0;">
+              <table class="mock-table">
+                <thead>
+                  <tr>
+                    <th>Parcela</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Propietario</th>
+                    <th style="text-align:right;">Precio</th>
+                    <th style="width:50px;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-family:monospace;font-size:10px;color:var(--primary);">23020A00600021</td>
+                    <td><span class="badge badge-slate">Arrendamiento</span></td>
+                    <td><span class="badge badge-green">Activo</span></td>
+                    <td style="color:var(--primary);">Juan Perez</td>
+                    <td style="text-align:right;">1.200 EUR</td>
+                    <td><span class="mock-btn ghost sm">Ver</span></td>
+                  </tr>
+                  <tr>
+                    <td style="font-family:monospace;font-size:10px;color:var(--primary);">23020A00600035</td>
+                    <td><span class="badge badge-slate">Arrendamiento</span></td>
+                    <td><span class="badge badge-blue">Borrador</span></td>
+                    <td style="color:var(--primary);">Maria Lopez</td>
+                    <td style="text-align:right;">--</td>
+                    <td><span class="mock-btn ghost sm">Ver</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- FASE 1 -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="phase-content" id="phase-1">
+  <div class="phase-header">
+    <h2>Fase 1: Tabs + Reorden de Secciones</h2>
+    <p class="subtitle">Mejorar la navegacion de pestanas, limpiar botones innecesarios y reordenar Contratos antes de Parcelas.</p>
+    <div class="tags">
+      <span class="tag tag-frontend">FRONTEND</span>
+      <span class="tag tag-no-schema">SIN CAMBIOS EN BD</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Tareas</h3>
+    <ul class="tasks">
+      <li><span class="task-icon"></span> Redisenar las tabs con estilo "pill/segmented control" para diferenciar activa/inactiva</li>
+      <li><span class="task-icon"></span> Eliminar botones del header: "KML" (descarga), "Editar", "Eliminar"</li>
+      <li><span class="task-icon"></span> Eliminar toolbar: "Detectar parcelas", "Exportar KML"</li>
+      <li><span class="task-icon"></span> Mantener solo el boton "+ Anadir parcelas" (reubicado en la seccion de parcelas)</li>
+      <li><span class="task-icon"></span> Mover la seccion "Contratos" ARRIBA de "Parcelas afectadas"</li>
+    </ul>
+  </div>
+
+  <div class="files">
+    <h6>Ficheros afectados</h6>
+    <code><span class="mod">[M]</span> src/components/projects/project-tabs.tsx</code>
+    <code><span class="mod">[M]</span> src/app/(dashboard)/projects/[id]/page.tsx</code>
+  </div>
+
+  <div class="compare">
+    <div class="compare-col">
+      <div class="compare-label before">ANTES</div>
+      <div class="compare-body">
+        <div class="mockup">
+          <!-- Header con botones -->
+          <div class="toolbar">
+            <div style="font-size:14px; font-weight:700;">Proyecto Solar Andujar</div>
+            <div class="toolbar-group">
+              <span class="mock-btn sm strikethrough">KML</span>
+              <span class="mock-btn sm strikethrough">Editar</span>
+              <span class="mock-btn sm strikethrough">Eliminar</span>
+            </div>
+          </div>
+
+          <!-- Tabs OLD -->
+          <div class="mock-tabs" style="border-bottom: 1px solid var(--border);">
+            <span class="mock-tab active-old">Gestion Terrenos</span>
+            <span class="mock-tab">Permitting</span>
+          </div>
+
+          <!-- Mapa -->
+          <div class="mock-card" style="margin-top:8px;">
+            <div class="mock-card-header"><h5>Mapa</h5></div>
+            <div class="mock-card-body" style="height:60px;background:var(--slate-light);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:10px;">mapa</div>
+          </div>
+
+          <!-- Toolbar con botones a eliminar -->
+          <div class="toolbar">
+            <span class="mock-btn sm strikethrough">Detectar parcelas</span>
+            <div class="toolbar-group">
+              <span class="mock-btn sm strikethrough">Exportar KML</span>
+              <span class="mock-btn sm primary">+ Anadir parcelas</span>
+            </div>
+          </div>
+
+          <div class="mock-card">
+            <div class="mock-card-header"><h5 style="color:var(--red);">1ro Parcelas afectadas</h5></div>
+            <div class="mock-card-body" style="height:40px;background:var(--slate-light);border-radius:4px;"></div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-header"><h5 style="color:var(--red);">2do Contratos</h5></div>
+            <div class="mock-card-body" style="height:40px;background:var(--slate-light);border-radius:4px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="compare-col">
+      <div class="compare-label after">DESPUES</div>
+      <div class="compare-body">
+        <div class="mockup">
+          <!-- Header SIN botones -->
+          <div class="toolbar">
+            <div style="font-size:14px; font-weight:700;">Proyecto Solar Andujar</div>
+            <div class="toolbar-group" style="opacity:0.3; font-size:10px; color:var(--muted);">(botones eliminados)</div>
+          </div>
+
+          <!-- Tabs NEW -->
+          <div class="mock-tabs-new">
+            <span class="mock-tab-new active-new">Gestion Terrenos <span class="badge badge-slate" style="font-size:9px;">12</span></span>
+            <span class="mock-tab-new">Permitting</span>
+          </div>
+
+          <!-- Mapa (sin cambios por ahora) -->
+          <div class="mock-card">
+            <div class="mock-card-header"><h5>Mapa</h5></div>
+            <div class="mock-card-body" style="height:60px;background:var(--slate-light);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:10px;">mapa (sin cambios aun)</div>
+          </div>
+
+          <!-- NUEVO ORDEN -->
+          <div class="mock-card">
+            <div class="mock-card-header"><h5 style="color:var(--green);">1ro Contratos (movido arriba)</h5></div>
+            <div class="mock-card-body" style="height:40px;background:var(--green-light);border-radius:4px;"></div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-header">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <h5 style="color:var(--green);">2do Parcelas afectadas (movido abajo)</h5>
+                <span class="mock-btn sm primary">+ Anadir parcelas</span>
+              </div>
+            </div>
+            <div class="mock-card-body" style="height:40px;background:var(--green-light);border-radius:4px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- FASE 2 -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="phase-content" id="phase-2">
+  <div class="phase-header">
+    <h2>Fase 2: Split Panel (Resumen + Mapa Satelite)</h2>
+    <p class="subtitle">Dividir el panel superior en estadisticas (40%) + mapa satelite (60%), con boton "Exportar KMZ".</p>
+    <div class="tags">
+      <span class="tag tag-frontend">FRONTEND</span>
+      <span class="tag tag-no-schema">SIN CAMBIOS EN BD</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Tareas</h3>
+    <ul class="tasks">
+      <li><span class="task-icon"></span> Dividir el Card del mapa en layout 40/60 con grid CSS</li>
+      <li><span class="task-icon"></span> Columna izquierda: calcular y mostrar estadisticas de parcelas por tecnologia/afeccion/estado</li>
+      <li><span class="task-icon"></span> Columna derecha: cambiar tile layer a Google Satellite (o ESRI World Imagery)</li>
+      <li><span class="task-icon"></span> Anadir boton "Exportar KMZ" dentro del contenedor del mapa (esquina sup. derecha)</li>
+      <li><span class="task-icon"></span> Pasar datos de tecnologias del proyecto a ProjectTabs para el calculo de stats</li>
+      <li><span class="task-icon"></span> Agrupar parcelas por afeccion y negotiationStatus para los contadores</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <strong>Nota:</strong> Las estadisticas se calculan a partir de datos ya existentes (parcelas + afeccion + negotiationStatus). No requiere cambios en la BD. El tile de satelite es gratuito con ESRI World Imagery.
+  </div>
+
+  <div class="files">
+    <h6>Ficheros afectados</h6>
+    <code><span class="mod">[M]</span> src/components/projects/project-tabs.tsx (split panel, stats)</code>
+    <code><span class="mod">[M]</span> src/components/map/geo-map.tsx (satellite tiles)</code>
+    <code><span class="mod">[M]</span> src/app/(dashboard)/projects/[id]/page.tsx (pasar technologies a tabs)</code>
+    <code><span class="new">[+]</span> src/app/api/projects/[id]/export/kmz/route.ts (endpoint KMZ)</code>
+  </div>
+
+  <div class="compare">
+    <div class="compare-col">
+      <div class="compare-label before">ANTES</div>
+      <div class="compare-body">
+        <div class="mockup">
+          <div class="mock-card">
+            <div class="mock-card-header">
+              <h5>Mapa</h5>
+              <div class="desc">
+                <span style="color:#2563eb;">&#9632;</span> Recinto &nbsp;
+                <span style="color:#16a34a;">&#9632;</span> Con contrato &nbsp;
+                <span style="color:#d97706;">&#9632;</span> Sin contrato
+              </div>
+            </div>
+            <div class="mock-card-body" style="padding:8px;">
+              <div class="mock-map-osm" style="height:160px;">
+                <span>OpenStreetMap<br>(todo el ancho)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="compare-col">
+      <div class="compare-label after">DESPUES</div>
+      <div class="compare-body">
+        <div class="mockup">
+          <div class="split-panel">
+            <!-- Left: Stats -->
+            <div class="split-left">
+              <div class="stat-group">
+                <div class="stat-label">Parcelas totales</div>
+                <div class="stat-total">24</div>
+              </div>
+              <div class="stat-group">
+                <div class="stat-label">Planta Solar</div>
+                <div style="font-size:14px; font-weight:700; margin-bottom:2px;">18 parcelas</div>
+                <div class="stat-sub">
+                  <span class="dot dot-green"></span>Firmadas: 8<br>
+                  <span class="dot dot-blue"></span>En negociacion: 6<br>
+                  <span class="dot dot-slate"></span>En busqueda: 4
+                </div>
+              </div>
+              <div class="stat-group">
+                <div class="stat-label">Linea de Evacuacion</div>
+                <div style="font-size:14px; font-weight:700; margin-bottom:2px;">6 parcelas</div>
+                <div class="stat-sub">
+                  <span class="dot dot-green"></span>Firmadas: 3<br>
+                  <span class="dot dot-blue"></span>En negociacion: 2<br>
+                  <span class="dot dot-slate"></span>En busqueda: 1
+                </div>
+              </div>
+            </div>
+            <!-- Right: Satellite Map -->
+            <div class="split-right">
+              <div class="mock-map" style="height:100%;min-height:200px;border-radius:0;">
+                <span class="kmz-btn">Exportar KMZ</span>
+                <span class="map-label">
+                  Vista Satelite<br>
+                  <span style="font-size:9px;">(ESRI World Imagery)</span><br><br>
+                  <span style="color:#2563eb;">&#9632;</span> Recinto &nbsp;
+                  <span style="color:#16a34a;">&#9632;</span> Con contrato &nbsp;
+                  <span style="color:#d97706;">&#9632;</span> Sin contrato
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- FASE 3 -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="phase-content" id="phase-3">
+  <div class="phase-header">
+    <h2>Fase 3: Rediseno de la Tabla de Contratos</h2>
+    <p class="subtitle">Nuevas columnas con logica "+X", ordenacion, fila clickable, y cambios en el esquema de BD.</p>
+    <div class="tags">
+      <span class="tag tag-schema">CAMBIO DE ESQUEMA</span>
+      <span class="tag tag-frontend">FRONTEND</span>
+      <span class="tag tag-backend">BACKEND</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Tareas</h3>
+    <ul class="tasks">
+      <li><span class="task-icon"></span> <strong>SCHEMA:</strong> Crear tabla intermedia ContractParcel (contractId, parcelId) para M:N contratos-parcelas</li>
+      <li><span class="task-icon"></span> <strong>SCHEMA:</strong> Anadir campos al modelo Contract: nextStep (String?), nextStepDate (DateTime?), notes (String?)</li>
+      <li><span class="task-icon"></span> <strong>SCHEMA:</strong> Anadir valor SIGNED_ADDENDUM al enum ContractStatus</li>
+      <li><span class="task-icon"></span> <strong>MIGRATION:</strong> Migrar datos existentes (cada contract.parcelId -> ContractParcel)</li>
+      <li><span class="task-icon"></span> <strong>BACKEND:</strong> Actualizar servicios y queries para la nueva relacion M:N</li>
+      <li><span class="task-icon"></span> <strong>FRONTEND:</strong> Nuevas columnas: Municipio (+X), Parcela/s (+X), Sup. Catastral total, Propietario/s (+X), Estado, Next Step, Fecha Firma</li>
+      <li><span class="task-icon"></span> <strong>FRONTEND:</strong> Eliminar columna "Precio" y boton "Ver"</li>
+      <li><span class="task-icon"></span> <strong>FRONTEND:</strong> Hacer toda la fila clickable (redirige al detalle)</li>
+      <li><span class="task-icon"></span> <strong>FRONTEND:</strong> Headers de columna ordenables (sort asc/desc)</li>
+      <li><span class="task-icon"></span> <strong>FRONTEND:</strong> Boton "+ Anadir Contrato" que inserta fila vacia en modo edicion</li>
+      <li><span class="task-icon"></span> <strong>FRONTEND:</strong> Filas con status EXPIRED fondo gris</li>
+      <li><span class="task-icon"></span> <strong>FRONTEND:</strong> Badge "Firmado - Adenda" con icono documento</li>
+    </ul>
+  </div>
+
+  <div class="schema-block">
+    <h6>Cambios en Prisma Schema</h6>
+    <pre>
+// Nueva tabla intermedia
+model ContractParcel {
+  id         String   @id @default(cuid())
+  contractId String
+  contract   Contract @relation(...)
+  parcelId   String
+  parcel     Parcel   @relation(...)
+  @@unique([contractId, parcelId])
+}
+
+// Nuevos campos en Contract
+model Contract {
+  // ... campos existentes ...
+  nextStep     String?    // Texto libre "Next Step"
+  nextStepDate DateTime?  // Fecha limite
+  notes        String?    // Observaciones
+  parcels      ContractParcel[]  // Nueva relacion M:N
+}
+
+// Nuevo valor en enum
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  SIGNED_ADDENDUM  // Firmado - Adenda
+}</pre>
+  </div>
+
+  <div class="files">
+    <h6>Ficheros afectados</h6>
+    <code><span class="mod">[M]</span> prisma/schema.prisma</code>
+    <code><span class="new">[+]</span> prisma/migrations/xxx_contract_parcels/migration.sql</code>
+    <code><span class="mod">[M]</span> src/services/contract.service.ts</code>
+    <code><span class="mod">[M]</span> src/lib/validations/contract.ts</code>
+    <code><span class="mod">[M]</span> src/components/projects/project-tabs.tsx</code>
+    <code><span class="mod">[M]</span> src/components/contracts/contract-status-badge.tsx</code>
+    <code><span class="mod">[M]</span> src/app/(dashboard)/projects/[id]/page.tsx</code>
+  </div>
+
+  <div class="compare">
+    <div class="compare-col">
+      <div class="compare-label before">ANTES</div>
+      <div class="compare-body">
+        <div class="mockup">
+          <div class="mock-card">
+            <div class="mock-card-header"><h5>Contratos (5)</h5></div>
+            <div class="mock-card-body" style="padding:0;">
+              <table class="mock-table">
+                <thead>
+                  <tr>
+                    <th>Parcela</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Propietario</th>
+                    <th style="text-align:right;">Precio</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="font-family:monospace;font-size:10px;">23020A006...</td>
+                    <td><span class="badge badge-slate">Arrend.</span></td>
+                    <td><span class="badge badge-green">Activo</span></td>
+                    <td>Juan Perez</td>
+                    <td style="text-align:right;">1.200 EUR</td>
+                    <td><span class="mock-btn ghost sm">Ver</span></td>
+                  </tr>
+                  <tr>
+                    <td style="font-family:monospace;font-size:10px;">23020A006...</td>
+                    <td><span class="badge badge-slate">Arrend.</span></td>
+                    <td><span class="badge badge-blue">Borrador</span></td>
+                    <td>Maria Lopez</td>
+                    <td style="text-align:right;">--</td>
+                    <td><span class="mock-btn ghost sm">Ver</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="compare-col">
+      <div class="compare-label after">DESPUES</div>
+      <div class="compare-body">
+        <div class="mockup">
+          <div class="mock-card">
+            <div class="mock-card-header">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <h5>Contratos (5)</h5>
+                <span class="mock-btn sm primary">+ Anadir Contrato</span>
+              </div>
+            </div>
+            <div class="mock-card-body" style="padding:0;">
+              <table class="mock-table">
+                <thead>
+                  <tr>
+                    <th style="width:20px;"></th>
+                    <th class="sortable">Municipio</th>
+                    <th class="sortable">Parcela/s</th>
+                    <th class="sortable" style="text-align:right;">Sup. Catastral</th>
+                    <th class="sortable">Propietario/s</th>
+                    <th class="sortable">Estado</th>
+                    <th class="sortable">Next Step</th>
+                    <th class="sortable">Fecha Firma</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="clickable">
+                    <td><span class="arrow">&#9654;</span></td>
+                    <td>Andujar <span style="color:var(--muted);font-size:9px;">(+2)</span></td>
+                    <td style="font-family:monospace;font-size:10px;">23020A006... <span style="color:var(--muted);font-size:9px;">(+5)</span></td>
+                    <td style="text-align:right;">45.300 m2</td>
+                    <td>Juan Perez <span style="color:var(--muted);font-size:9px;">(+3)</span></td>
+                    <td><span class="badge badge-green">Firmado</span></td>
+                    <td style="font-size:10px;">Revision anual</td>
+                    <td style="font-size:10px;">15/03/2025</td>
+                  </tr>
+                  <tr class="clickable">
+                    <td><span class="arrow">&#9654;</span></td>
+                    <td>Andujar</td>
+                    <td style="font-family:monospace;font-size:10px;">23020A006...</td>
+                    <td style="text-align:right;">8.200 m2</td>
+                    <td>Maria Lopez</td>
+                    <td><span class="badge badge-blue">En negociacion</span></td>
+                    <td style="font-size:10px;">Enviar oferta</td>
+                    <td style="font-size:10px;">--</td>
+                  </tr>
+                  <tr class="clickable">
+                    <td><span class="arrow">&#9654;</span></td>
+                    <td>Marmolejo</td>
+                    <td style="font-family:monospace;font-size:10px;">23060B001... <span style="color:var(--muted);font-size:9px;">(+1)</span></td>
+                    <td style="text-align:right;">22.100 m2</td>
+                    <td>Carlos Ruiz</td>
+                    <td><span class="badge badge-addendum">Firmado <span style="font-size:8px;">&#128196;</span></span></td>
+                    <td style="font-size:10px;">Adenda pendiente</td>
+                    <td style="font-size:10px;">01/06/2024</td>
+                  </tr>
+                  <tr class="clickable expired-row">
+                    <td><span class="arrow">&#9654;</span></td>
+                    <td>Andujar</td>
+                    <td style="font-family:monospace;font-size:10px;">23020A006...</td>
+                    <td style="text-align:right;">5.600 m2</td>
+                    <td>Ana Garcia</td>
+                    <td><span class="badge badge-zinc">Expirado</span></td>
+                    <td style="font-size:10px;">--</td>
+                    <td style="font-size:10px;">12/01/2023</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- FASE 4 -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="phase-content" id="phase-4">
+  <div class="phase-header">
+    <h2>Fase 4: Panel Expandible de Edicion Rapida</h2>
+    <p class="subtitle">Al expandir un contrato, mostrar formulario de edicion rapida con parcelas, personas y acciones.</p>
+    <div class="tags">
+      <span class="tag tag-frontend">FRONTEND</span>
+      <span class="tag tag-backend">BACKEND (actions)</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Tareas</h3>
+    <ul class="tasks">
+      <li><span class="task-icon"></span> Panel expandible con fondo unificado (fila padre + panel comparten color)</li>
+      <li><span class="task-icon"></span> Bloque superior: inputs Next Step, Fecha limite (datepicker), Notas, dropdown Estado</li>
+      <li><span class="task-icon"></span> Bloque inferior izq.: mini-tabla de parcelas + buscador "+ Anadir Parcela"</li>
+      <li><span class="task-icon"></span> Bloque inferior der.: componente Personas Relacionadas (reutilizar del panel de parcelas)</li>
+      <li><span class="task-icon"></span> Footer: boton "Guardar cambios" + "Editar mas Detalles" con microcopy</li>
+      <li><span class="task-icon"></span> Modal de "Cambios sin guardar" al cerrar con datos modificados</li>
+      <li><span class="task-icon"></span> Server actions para: updateContractQuickEdit, linkParcelToContract, searchAvailableParcels</li>
+    </ul>
+  </div>
+
+  <div class="files">
+    <h6>Ficheros afectados</h6>
+    <code><span class="new">[+]</span> src/components/projects/contracts/contract-panel.tsx</code>
+    <code><span class="new">[+]</span> src/components/projects/contracts/parcel-search.tsx</code>
+    <code><span class="new">[+]</span> src/actions/contract-parcel.ts</code>
+    <code><span class="mod">[M]</span> src/actions/contract.ts</code>
+    <code><span class="mod">[M]</span> src/components/projects/project-tabs.tsx</code>
+    <code><span class="mod">[M]</span> src/services/contract.service.ts</code>
+  </div>
+
+  <div class="compare compare-single">
+    <div class="compare-col">
+      <div class="compare-label new">MOCKUP: Contrato expandido con edicion rapida</div>
+      <div class="compare-body">
+        <div class="mockup">
+          <table class="mock-table" style="margin-bottom:0;">
+            <thead>
+              <tr>
+                <th style="width:20px;"></th>
+                <th>Municipio</th>
+                <th>Parcela/s</th>
+                <th style="text-align:right;">Sup. Catastral</th>
+                <th>Propietario/s</th>
+                <th>Estado</th>
+                <th>Next Step</th>
+                <th>Fecha Firma</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Fila normal (colapsada) -->
+              <tr class="clickable">
+                <td><span class="arrow">&#9654;</span></td>
+                <td>Marmolejo</td>
+                <td style="font-family:monospace;font-size:10px;">23060B001...</td>
+                <td style="text-align:right;">22.100 m2</td>
+                <td>Carlos Ruiz</td>
+                <td><span class="badge badge-green">Firmado</span></td>
+                <td style="font-size:10px;">--</td>
+                <td style="font-size:10px;">01/06/2024</td>
+              </tr>
+
+              <!-- Fila EXPANDIDA (fondo unificado) -->
+              <tr class="expand-row">
+                <td><span class="arrow expanded">&#9654;</span></td>
+                <td>Andujar <span style="color:var(--muted);font-size:9px;">(+2)</span></td>
+                <td style="font-family:monospace;font-size:10px;">23020A006... <span style="color:var(--muted);font-size:9px;">(+5)</span></td>
+                <td style="text-align:right;">45.300 m2</td>
+                <td>Juan Perez <span style="color:var(--muted);font-size:9px;">(+3)</span></td>
+                <td><span class="badge badge-green">Firmado</span></td>
+                <td style="font-size:10px;">Revision anual</td>
+                <td style="font-size:10px;">15/03/2025</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Panel expandido -->
+          <div class="expand-panel">
+            <!-- Bloque Superior: Observaciones Contratacion -->
+            <div class="expand-section">
+              <h6>Observaciones Contratacion</h6>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                <div>
+                  <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Next Step</div>
+                  <input type="text" class="mock-input" value="Revision anual del contrato" readonly>
+                </div>
+                <div>
+                  <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Fecha limite</div>
+                  <input type="text" class="mock-input" value="15/06/2025" readonly>
+                </div>
+              </div>
+              <div style="margin-bottom:8px;">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Notas / Observaciones</div>
+                <textarea class="mock-textarea" readonly>El propietario ha solicitado revision de las condiciones economicas. Contactar antes de julio.</textarea>
+              </div>
+              <div>
+                <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">Estado de negociacion</div>
+                <select class="mock-select" style="width:200px;">
+                  <option>Firmado</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Bloque Inferior: 2 columnas -->
+            <div class="expand-grid">
+              <!-- Izquierda: Parcelas -->
+              <div class="expand-section">
+                <h6>Parcelas Afectadas</h6>
+                <table class="mock-table" style="margin-bottom:8px;">
+                  <thead>
+                    <tr>
+                      <th>Municipio</th>
+                      <th>Ref. Catastral</th>
+                      <th style="text-align:right;">Sup. (m2)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Andujar</td>
+                      <td style="font-family:monospace;font-size:10px;">23020A00600021</td>
+                      <td style="text-align:right;">12.500</td>
+                    </tr>
+                    <tr>
+                      <td>Andujar</td>
+                      <td style="font-family:monospace;font-size:10px;">23020A00600035</td>
+                      <td style="text-align:right;">8.200</td>
+                    </tr>
+                    <tr>
+                      <td>Andujar</td>
+                      <td style="font-family:monospace;font-size:10px;">23020A00600042</td>
+                      <td style="text-align:right;">6.100</td>
+                    </tr>
+                    <tr>
+                      <td>Lopera</td>
+                      <td style="font-family:monospace;font-size:10px;">23055A00200018</td>
+                      <td style="text-align:right;">9.800</td>
+                    </tr>
+                    <tr>
+                      <td>Lopera</td>
+                      <td style="font-family:monospace;font-size:10px;">23055A00200025</td>
+                      <td style="text-align:right;">5.200</td>
+                    </tr>
+                    <tr>
+                      <td>Marmolejo</td>
+                      <td style="font-family:monospace;font-size:10px;">23060B00100007</td>
+                      <td style="text-align:right;">3.500</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <input type="text" class="mock-input" placeholder="Buscar parcela por ref. catastral..." style="flex:1;">
+                  <span class="mock-btn sm primary">+ Anadir</span>
+                </div>
+              </div>
+
+              <!-- Derecha: Personas Relacionadas -->
+              <div class="expand-section">
+                <h6>Personas Relacionadas</h6>
+                <div style="space-y:6px;">
+                  <div style="padding:6px 0; border-bottom:1px solid var(--border);">
+                    <div><strong>Juan Perez</strong> <span style="color:var(--muted);font-size:10px;">(API)</span></div>
+                    <div style="font-size:10px;color:var(--muted);">654 321 987</div>
+                    <div style="font-size:10px;color:var(--muted);">juan@email.com</div>
+                  </div>
+                  <div style="padding:6px 0; border-bottom:1px solid var(--border);">
+                    <div><strong>Maria Gomez</strong> <span style="color:var(--muted);font-size:10px;">(Interlocutor familiar)</span></div>
+                    <div style="font-size:10px;color:var(--muted);">687 123 456</div>
+                  </div>
+                  <div style="padding:6px 0;">
+                    <div><strong>Pedro Sanchez</strong> <span style="color:var(--muted);font-size:10px;">(Abogado/Gestor)</span></div>
+                    <div style="font-size:10px;color:var(--muted);">psanchez@despacho.es</div>
+                    <div style="font-size:10px;color:var(--muted);font-style:italic;">Gestiona 3 fincas del municipio</div>
+                  </div>
+                </div>
+                <div style="margin-top:8px;">
+                  <span class="mock-btn sm" style="color:var(--primary);">+ Anadir contacto</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="panel-footer">
+              <div>
+                <span class="mock-btn">Editar mas Detalles</span>
+                <span class="edit-more-hint">(Propietarios, condiciones comerciales, etc.)</span>
+              </div>
+              <span class="mock-btn primary">Guardar cambios</span>
+            </div>
+          </div>
+
+          <!-- Fila normal siguiente -->
+          <table class="mock-table" style="margin-top:0;">
+            <tbody>
+              <tr class="clickable">
+                <td style="width:20px;"><span class="arrow">&#9654;</span></td>
+                <td>Andujar</td>
+                <td style="font-family:monospace;font-size:10px;">23020A006...</td>
+                <td style="text-align:right;">8.200 m2</td>
+                <td>Maria Lopez</td>
+                <td><span class="badge badge-blue">En negociacion</span></td>
+                <td style="font-size:10px;">Enviar oferta</td>
+                <td style="font-size:10px;">--</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal mockup -->
+  <div class="section">
+    <h3>Modal: Cambios sin guardar</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Se muestra al intentar cerrar el panel o navegar a "Editar mas Detalles" sin guardar.</p>
+    <div class="compare compare-single">
+      <div class="compare-col" style="max-width:400px; margin:0 auto;">
+        <div class="compare-label new">MODAL</div>
+        <div class="compare-body" style="background:rgba(0,0,0,0.05); padding:24px;">
+          <div class="mock-modal">
+            <h6>Cambios sin guardar</h6>
+            <p>Tienes cambios sin guardar en este contrato. Si continuas, se perderan los cambios.</p>
+            <div class="modal-btns">
+              <span class="mock-btn">Cancelar</span>
+              <span class="mock-btn" style="background:var(--red);color:white;border-color:var(--red);">Descartar cambios</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- FASE 5 -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="phase-content" id="phase-5">
+  <div class="phase-header">
+    <h2>Fase 5: Simplificacion de la Tabla "Parcelas Afectadas"</h2>
+    <p class="subtitle">Reducir la tabla inferior a 5 columnas estrictas, sin funcionalidad de expansion ni eliminacion.</p>
+    <div class="tags">
+      <span class="tag tag-frontend">FRONTEND</span>
+      <span class="tag tag-no-schema">SIN CAMBIOS EN BD</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Tareas</h3>
+    <ul class="tasks">
+      <li><span class="task-icon"></span> Reducir columnas a solo: Municipio, Ref. Catastral, Superficie, Propietario, Afeccion</li>
+      <li><span class="task-icon"></span> Eliminar: toggle de expansion, columna "Estado Contratacion", boton de eliminar parcela</li>
+      <li><span class="task-icon"></span> Eliminar el componente ParcelPanel (la expansion de parcelas) de esta vista</li>
+      <li><span class="task-icon"></span> Diseno minimalista y limpio</li>
+    </ul>
+  </div>
+
+  <div class="files">
+    <h6>Ficheros afectados</h6>
+    <code><span class="mod">[M]</span> src/components/projects/project-tabs.tsx</code>
+  </div>
+
+  <div class="compare">
+    <div class="compare-col">
+      <div class="compare-label before">ANTES (8 columnas)</div>
+      <div class="compare-body">
+        <div class="mockup">
+          <div class="mock-card">
+            <div class="mock-card-header"><h5>Parcelas afectadas (12)</h5></div>
+            <div class="mock-card-body" style="padding:0;">
+              <table class="mock-table">
+                <thead>
+                  <tr>
+                    <th style="width:24px;"></th>
+                    <th>Municipio</th>
+                    <th>Ref. Catastral</th>
+                    <th style="text-align:right;">Superficie</th>
+                    <th><span class="strikethrough">Estado Contratacion</span></th>
+                    <th>Propietario</th>
+                    <th>Afeccion</th>
+                    <th style="width:30px;"><span class="strikethrough">&#128465;</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="strikethrough arrow">&#9654;</span></td>
+                    <td>Andujar</td>
+                    <td style="font-family:monospace;font-size:10px;">23020A00600021</td>
+                    <td style="text-align:right;">12.500 m2</td>
+                    <td><span class="badge badge-green strikethrough">Firmado</span></td>
+                    <td>Juan Perez</td>
+                    <td>Planta</td>
+                    <td><span class="strikethrough" style="color:var(--red);">&#128465;</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="compare-col">
+      <div class="compare-label after">DESPUES (5 columnas)</div>
+      <div class="compare-body">
+        <div class="mockup">
+          <div class="mock-card">
+            <div class="mock-card-header">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <h5>Parcelas afectadas (12)</h5>
+                <span class="mock-btn sm primary">+ Anadir parcelas</span>
+              </div>
+            </div>
+            <div class="mock-card-body" style="padding:0;">
+              <table class="mock-table">
+                <thead>
+                  <tr>
+                    <th>Municipio</th>
+                    <th>Ref. Catastral</th>
+                    <th style="text-align:right;">Superficie</th>
+                    <th>Propietario</th>
+                    <th>Afeccion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Andujar</td>
+                    <td style="font-family:monospace;font-size:10px;">23020A00600021</td>
+                    <td style="text-align:right;">12.500 m2</td>
+                    <td>Juan Perez</td>
+                    <td>Planta</td>
+                  </tr>
+                  <tr>
+                    <td>Andujar</td>
+                    <td style="font-family:monospace;font-size:10px;">23020A00600035</td>
+                    <td style="text-align:right;">8.200 m2</td>
+                    <td>Maria Lopez</td>
+                    <td>Planta</td>
+                  </tr>
+                  <tr>
+                    <td>Marmolejo</td>
+                    <td style="font-family:monospace;font-size:10px;">23060B00100007</td>
+                    <td style="text-align:right;">3.500 m2</td>
+                    <td>Carlos Ruiz</td>
+                    <td>Linea de alta tension</td>
+                  </tr>
+                  <tr>
+                    <td>Lopera</td>
+                    <td style="font-family:monospace;font-size:10px;">23055A00200018</td>
+                    <td style="text-align:right;">9.800 m2</td>
+                    <td>Ana Garcia</td>
+                    <td>Subestacion</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+function showPhase(index) {
+  document.querySelectorAll('.phase-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.phase-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('phase-' + index).classList.add('active');
+  document.querySelectorAll('.phase-btn')[index].classList.add('active');
+}
+</script>
+</body>
+</html>

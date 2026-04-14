@@ -9,8 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { ContractStatusBadge } from "@/components/contracts/contract-status-badge"
-import { ContractTypeBadge } from "@/components/contracts/contract-type-badge"
+import { ContractsTable } from "@/components/contracts/contracts-table"
 import {
   CONTRACT_TYPES,
   CONTRACT_STATUSES,
@@ -19,7 +18,7 @@ import {
   type ContractType,
   type ContractStatus,
 } from "@/lib/validations/contract"
-import { Plus, FileText } from "lucide-react"
+import { Plus } from "lucide-react"
 
 type Props = {
   searchParams: Promise<{ type?: string; status?: string }>
@@ -122,99 +121,10 @@ export default async function ContractsPage({ searchParams }: Props) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {contracts.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-10 text-center">
-              <FileText className="h-10 w-10 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">
-                {type || status
-                  ? "No hay contratos con los filtros seleccionados."
-                  : "Todavía no hay contratos. Crea el primero."}
-              </p>
-              {!type && !status && (
-                <Button asChild size="sm" variant="outline">
-                  <Link href="/contracts/new">Nuevo contrato</Link>
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-auto rounded-md border">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/40">
-                    <th className="py-2 px-3 text-left font-medium text-muted-foreground">
-                      Tipo
-                    </th>
-                    <th className="py-2 px-3 text-left font-medium text-muted-foreground">
-                      Estado
-                    </th>
-                    <th className="py-2 px-3 text-left font-medium text-muted-foreground">
-                      Parcela
-                    </th>
-                    <th className="py-2 px-3 text-left font-medium text-muted-foreground">
-                      Propietario
-                    </th>
-                    <th className="py-2 px-3 text-right font-medium text-muted-foreground">
-                      Precio
-                    </th>
-                    <th className="py-2 px-3 text-left font-medium text-muted-foreground">
-                      Firmado
-                    </th>
-                    <th className="py-2 px-3 w-16" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {contracts.map((c) => (
-                    <tr
-                      key={c.id}
-                      className="border-b last:border-0 hover:bg-muted/20"
-                    >
-                      <td className="py-2 px-3">
-                        <ContractTypeBadge type={c.type} />
-                      </td>
-                      <td className="py-2 px-3">
-                        <ContractStatusBadge status={c.status} />
-                      </td>
-                      <td className="py-2 px-3 font-mono text-xs">
-                        <Link
-                          href={`/parcels/${c.parcel.id}`}
-                          className="text-primary hover:underline underline-offset-4"
-                        >
-                          {c.parcel.cadastralRef}
-                        </Link>
-                      </td>
-                      <td className="py-2 px-3">
-                        <Link
-                          href={`/owners/${c.owner.id}`}
-                          className="hover:underline underline-offset-4"
-                        >
-                          {c.owner.name}
-                        </Link>
-                      </td>
-                      <td className="py-2 px-3 text-right tabular-nums text-muted-foreground">
-                        {c.price != null
-                          ? `${c.price.toLocaleString("es-ES")} €`
-                          : "—"}
-                      </td>
-                      <td className="py-2 px-3 text-muted-foreground">
-                        {c.signedAt
-                          ? c.signedAt.toLocaleDateString("es-ES", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            })
-                          : "—"}
-                      </td>
-                      <td className="py-2 px-3 text-right">
-                        <Button asChild variant="ghost" size="sm">
-                          <Link href={`/contracts/${c.id}`}>Ver</Link>
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <ContractsTable
+            contracts={contracts}
+            emptyWithFilters={!!(type || status)}
+          />
         </CardContent>
       </Card>
     </div>

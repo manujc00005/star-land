@@ -13,6 +13,8 @@ type ProjectRow = {
   name: string
   powerMW: number | null
   status: ProjectStatus
+  cluster: string | null
+  developer: string | null
   createdAt: Date
 }
 
@@ -21,6 +23,8 @@ type SortDir = "asc" | "desc"
 
 const COLUMNS: { key: SortKey; label: string; hiddenMobile?: boolean }[] = [
   { key: "name", label: "Nombre" },
+  { key: "cluster", label: "Cluster", hiddenMobile: true },
+  { key: "developer", label: "Developer", hiddenMobile: true },
   { key: "powerMW", label: "Potencia" },
   { key: "status", label: "Estado" },
   { key: "createdAt", label: "Creado", hiddenMobile: true },
@@ -47,6 +51,8 @@ export function ProjectsTable({ projects }: { projects: ProjectRow[] }) {
     return projects.filter((p) =>
       [
         p.name,
+        p.cluster ?? "",
+        p.developer ?? "",
         `${p.powerMW} mw`,
         p.status,
         PROJECT_STATUS_LABELS[p.status],
@@ -60,6 +66,8 @@ export function ProjectsTable({ projects }: { projects: ProjectRow[] }) {
       let cmp = 0
       if (sortKey === "name" || sortKey === "status") {
         cmp = a[sortKey].localeCompare(b[sortKey], "es")
+      } else if (sortKey === "cluster" || sortKey === "developer") {
+        cmp = (a[sortKey] ?? "").localeCompare(b[sortKey] ?? "", "es")
       } else if (sortKey === "powerMW") {
         cmp = (a.powerMW ?? -1) - (b.powerMW ?? -1)
       } else if (sortKey === "createdAt") {
@@ -116,6 +124,12 @@ export function ProjectsTable({ projects }: { projects: ProjectRow[] }) {
                     className="border-b last:border-0 hover:bg-muted/50 cursor-pointer"
                   >
                     <td className="py-3 px-4 font-medium">{project.name}</td>
+                    <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">
+                      {project.cluster ?? "—"}
+                    </td>
+                    <td className="py-3 px-4 hidden md:table-cell text-muted-foreground">
+                      {project.developer ?? "—"}
+                    </td>
                     <td className="py-3 px-4 text-muted-foreground">
                       {project.powerMW != null ? `${project.powerMW} MW` : "—"}
                     </td>

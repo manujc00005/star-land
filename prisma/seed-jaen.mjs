@@ -16,9 +16,12 @@
  */
 
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
-const ORG = "cmnujsguw0000tqpcz7lmm0py";
+const ORG        = process.env.SEED_ORG_ID    || "cmmvuvo3e0000wkhoir7u52ab";
+const USER_EMAIL = process.env.SEED_USER_EMAIL || "mrjou@gmail.com";
+const USER_NAME  = process.env.SEED_USER_NAME  || "Manuel Jou";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -505,9 +508,30 @@ const PARCELS = [
 async function main() {
   console.log("🌱  Iniciando seed Jaén para JOU SL…\n");
 
+  // 0. Organización y usuario (upsert — idempotente)
+  console.log("🏢  Asegurando organización y usuario…");
+  await prisma.organization.upsert({
+    where: { id: ORG },
+    update: { name: "JOU SL" },
+    create: { id: ORG, name: "JOU SL" },
+  });
+  const passwordHash = await bcrypt.hash("test1234", 10);
+  await prisma.user.upsert({
+    where: { email: USER_EMAIL },
+    update: {},
+    create: {
+      email: USER_EMAIL,
+      passwordHash,
+      name: USER_NAME,
+      organizationId: ORG,
+    },
+  });
+  console.log(`   ✓ Organización: JOU SL  |  Usuario: ${USER_EMAIL}  (pass: test1234)\n`);
+
   // 1. Limpiar datos existentes (excepto usuario y organización)
   console.log("🗑   Limpiando datos previos…");
   await prisma.parcelContact.deleteMany({ where: { organizationId: ORG } });
+  await prisma.contractParcel.deleteMany({ where: { organizationId: ORG } });
   await prisma.contract.deleteMany({ where: { organizationId: ORG } });
   await prisma.projectParcel.deleteMany({ where: { organizationId: ORG } });
   await prisma.parcel.deleteMany({ where: { organizationId: ORG } });
@@ -601,55 +625,81 @@ async function main() {
   console.log("\n📄  Creando contratos…");
 
   const contractsData = [
-    // ── Andújar: mix de estados
-    { type: "RENTAL",   status: "ACTIVE",   price: 220, signedAt: new Date("2023-06-15"), parcel: andujar[0], owner: createdOwners[0] },  // Francisco Ruiz
-    { type: "RENTAL",   status: "DRAFT",    price: 195, signedAt: null,                   parcel: andujar[1], owner: createdOwners[6] },  // Rosa Valenzuela
-    { type: "RENTAL",   status: "ACTIVE",   price: 210, signedAt: new Date("2024-02-01"), parcel: andujar[2], owner: createdOwners[8] },  // Agropecuaria
-    { type: "RENTAL",   status: "DRAFT",    price: 180, signedAt: null,                   parcel: andujar[3], owner: createdOwners[12] }, // Sebastián Quesada
-    { type: "PURCHASE", status: "DRAFT",    price: 28000, signedAt: null,                 parcel: andujar[7], owner: createdOwners[11] }, // Inv. Rurales Jaén
+    // ── Andújar: mix de estados                                                       nextStep / nextStepDate solo en DRAFT
+    { type: "RENTAL",   status: "ACTIVE",         price: 220,   signedAt: new Date("2023-06-15"), notes: "Arrendamiento 25 años con revisión IPC anual",                                  parcel: andujar[0],  owner: createdOwners[0]  }, // Francisco Ruiz      [0]
+    { type: "RENTAL",   status: "DRAFT",           price: 195,   signedAt: null,                   nextStep: "Enviar borrador de contrato",                nextStepDate: new Date("2026-04-20"), parcel: andujar[1],  owner: createdOwners[6]  }, // Rosa Valenzuela     [1]
+    { type: "RENTAL",   status: "SIGNED_ADDENDUM", price: 210,   signedAt: new Date("2024-02-01"), notes: "Adenda abr-2025: amplía a parcelas 010/008 y 011/002 contiguas",                parcel: andujar[2],  owner: createdOwners[8]  }, // Agropecuaria        [2]
+    { type: "RENTAL",   status: "DRAFT",           price: 180,   signedAt: null,                   nextStep: "Primera visita a la parcela",                nextStepDate: new Date("2026-04-17"), parcel: andujar[3],  owner: createdOwners[12] }, // Sebastián Quesada   [3]
+    { type: "PURCHASE", status: "DRAFT",           price: 28000, signedAt: null,                   nextStep: "Solicitar valoración notarial",               nextStepDate: new Date("2026-04-25"), parcel: andujar[7],  owner: createdOwners[11] }, // Inv. Rurales Jaén   [4]
     // ── La Carolina
-    { type: "RENTAL",   status: "ACTIVE",   price: 150, signedAt: new Date("2024-09-10"), parcel: carolina[0], owner: createdOwners[5] }, // CB Hermanos Palomares
-    { type: "RENTAL",   status: "DRAFT",    price: 140, signedAt: null,                   parcel: carolina[1], owner: createdOwners[7] }, // Pedro Castillo
-    { type: "RENTAL",   status: "EXPIRED",  price: 130, signedAt: new Date("2021-03-20"), parcel: carolina[3], owner: createdOwners[5] }, // CB Palomares (venció)
+    { type: "RENTAL",   status: "ACTIVE",          price: 150,   signedAt: new Date("2024-09-10"), notes: "CB — firmado por todos los socios. Adenda parcela 006/007 en tramitación",     parcel: carolina[0], owner: createdOwners[5]  }, // CB Palomares        [5]
+    { type: "RENTAL",   status: "DRAFT",           price: 140,   signedAt: null,                   nextStep: "Segunda ronda de negociación de precio",     nextStepDate: new Date("2026-04-22"), parcel: carolina[1], owner: createdOwners[7]  }, // Pedro Castillo      [6]
+    { type: "RENTAL",   status: "EXPIRED",         price: 130,   signedAt: new Date("2021-03-20"), notes: "Vencido mar-2024. Propietario contactado para renovación sin acuerdo",         parcel: carolina[3], owner: createdOwners[5]  }, // CB Palomares venció [7]
     // ── Baeza
-    { type: "RENTAL",   status: "ACTIVE",   price: 240, signedAt: new Date("2024-01-20"), parcel: baeza[0], owner: createdOwners[1] },    // Mª Dolores López
-    { type: "RENTAL",   status: "ACTIVE",   price: 255, signedAt: new Date("2023-11-05"), parcel: baeza[1], owner: createdOwners[9] },    // Juan Carlos Medina
-    { type: "RENTAL",   status: "DRAFT",    price: 230, signedAt: null,                   parcel: baeza[2], owner: createdOwners[1] },
-    { type: "PURCHASE", status: "ACTIVE",   price: 42000, signedAt: new Date("2024-05-30"), parcel: baeza[4], owner: createdOwners[9] },
+    { type: "RENTAL",   status: "ACTIVE",          price: 240,   signedAt: new Date("2024-01-20"), notes: "Incluye cláusula de revisión cada 5 años solicitada por la propietaria",      parcel: baeza[0],    owner: createdOwners[1]  }, // Mª Dolores López    [8]
+    { type: "RENTAL",   status: "ACTIVE",          price: 255,   signedAt: new Date("2023-11-05"), notes: "Parcela 015/031 incluida como contigua en adenda nov-2023",                   parcel: baeza[1],    owner: createdOwners[9]  }, // Juan Carlos Medina  [9]
+    { type: "RENTAL",   status: "DRAFT",           price: 230,   signedAt: null,                   nextStep: "Reunión con gestora Bailén Agrícola",        nextStepDate: new Date("2026-04-18"), parcel: baeza[2],    owner: createdOwners[1]  },                       // [10]
+    { type: "PURCHASE", status: "ACTIVE",          price: 42000, signedAt: new Date("2024-05-30"), notes: "Escriturado en notaría de Baeza. Inscrito en RPP.",                            parcel: baeza[4],    owner: createdOwners[9]  },                       // [11]
     // ── Martos
-    { type: "RENTAL",   status: "ACTIVE",   price: 200, signedAt: new Date("2024-03-15"), parcel: martos[0], owner: createdOwners[3] },   // Carmen Ibáñez
-    { type: "RENTAL",   status: "DRAFT",    price: 185, signedAt: null,                   parcel: martos[1], owner: createdOwners[10] }, // Herminia Cañete
-    { type: "RENTAL",   status: "EXPIRED",  price: 170, signedAt: new Date("2020-07-01"), parcel: martos[2], owner: createdOwners[3] },
+    { type: "RENTAL",   status: "ACTIVE",          price: 200,   signedAt: new Date("2024-03-15"), notes: "Pendiente resolución herencia parcial — titularidad compartida",               parcel: martos[0],   owner: createdOwners[3]  }, // Carmen Ibáñez       [12]
+    { type: "RENTAL",   status: "DRAFT",           price: 185,   signedAt: null,                   nextStep: "Contactar propietaria para reunión presencial", nextStepDate: new Date("2026-04-21"), parcel: martos[1],   owner: createdOwners[10] }, // Herminia Cañete     [13]
+    { type: "RENTAL",   status: "EXPIRED",         price: 170,   signedAt: new Date("2020-07-01"), notes: "Vencido jul-2024. Propietaria rechazó renovación.",                            parcel: martos[2],   owner: createdOwners[3]  },                       // [14]
     // ── Úbeda
-    { type: "RENTAL",   status: "DRAFT",    price: 270, signedAt: null,                   parcel: ubeda[0], owner: createdOwners[4] },    // José Manuel Torres
-    { type: "RENTAL",   status: "DRAFT",    price: 265, signedAt: null,                   parcel: ubeda[1], owner: createdOwners[13] },   // Francisca Aranda
-    { type: "PURCHASE", status: "DRAFT",    price: 55000, signedAt: null,                 parcel: ubeda[2], owner: createdOwners[11] },
-    // ── Linares (sin proyecto)
-    { type: "PURCHASE", status: "DRAFT",    price: 32000, signedAt: null,                 parcel: linares[0], owner: createdOwners[2] },  // Antonio Moreno
-    { type: "RENTAL",   status: "DRAFT",    price: 160, signedAt: null,                   parcel: linares[1], owner: createdOwners[7] },
-    { type: "RENTAL",   status: "ACTIVE",   price: 155, signedAt: new Date("2023-08-01"), parcel: linares[2], owner: createdOwners[2] },
-    { type: "RENTAL",   status: "EXPIRED",  price: 145, signedAt: new Date("2019-04-12"), parcel: linares[2], owner: createdOwners[7] },
+    { type: "RENTAL",   status: "DRAFT",           price: 270,   signedAt: null,                   nextStep: "Enviar primera oferta formal por email",     nextStepDate: new Date("2026-04-16"), parcel: ubeda[0],    owner: createdOwners[4]  }, // José Manuel Torres  [15]
+    { type: "RENTAL",   status: "DRAFT",           price: 265,   signedAt: null,                   nextStep: "Negociar precio (propietaria pide mín. 265 €/ha/año)", nextStepDate: new Date("2026-04-19"), parcel: ubeda[1],    owner: createdOwners[13] }, // Francisca Aranda    [16]
+    { type: "PURCHASE", status: "DRAFT",           price: 55000, signedAt: null,                   nextStep: "Obtener valoración pericial independiente",  nextStepDate: new Date("2026-04-30"), parcel: ubeda[2],    owner: createdOwners[11] },                       // [17]
+    // ── Linares (sin proyecto asignado)
+    { type: "PURCHASE", status: "DRAFT",           price: 32000, signedAt: null,                   nextStep: "Preparar oferta de compra (propietario solo acepta venta)", nextStepDate: new Date("2026-04-23"), parcel: linares[0],  owner: createdOwners[2]  }, // Antonio Moreno      [18]
+    { type: "RENTAL",   status: "DRAFT",           price: 160,   signedAt: null,                   nextStep: "Localizar contacto directo del propietario", nextStepDate: new Date("2026-04-28"), parcel: linares[1],  owner: createdOwners[7]  },                       // [19]
+    { type: "RENTAL",   status: "ACTIVE",          price: 155,   signedAt: new Date("2023-08-01"), parcel: linares[2],  owner: createdOwners[2]  },                       // [20]
+    { type: "RENTAL",   status: "EXPIRED",         price: 145,   signedAt: new Date("2019-04-12"), notes: "Expirado. Suplantado por contrato ACTIVE de ago-2023.",                       parcel: linares[2],  owner: createdOwners[7]  },                       // [21]
   ];
 
+  const createdContracts = [];
   for (const c of contractsData) {
-    await prisma.contract.create({
+    const contract = await prisma.contract.create({
       data: {
         type: c.type,
         status: c.status,
         price: c.price,
         signedAt: c.signedAt,
+        nextStep: c.nextStep ?? null,
+        nextStepDate: c.nextStepDate ?? null,
+        notes: c.notes ?? null,
         parcelId: c.parcel.id,
         ownerId: c.owner.id,
         organizationId: ORG,
       },
     });
+    createdContracts.push(contract);
     const priceFmt = c.type === "PURCHASE"
       ? `${c.price.toLocaleString()}€`
       : `${c.price}€/ha/año`;
-    console.log(`   ✓ [${c.type.padEnd(8)} / ${c.status.padEnd(7)}]  ${c.parcel.cadastralRef}  ${priceFmt}`);
+    console.log(`   ✓ [${c.type.padEnd(8)} / ${c.status.padEnd(15)}]  ${c.parcel.cadastralRef}  ${priceFmt}`);
   }
 
-  // 7. Relaciones Proyecto ↔ Parcela (ProjectParcel)
+  // 7. ContractParcels — parcelas adicionales vinculadas a un contrato (M:N)
+  console.log("\n📎  Vinculando parcelas adicionales a contratos…");
+  // [2]  SIGNED_ADDENDUM Agropecuaria (andujar[2])  → también cubre andujar[3]
+  // [5]  ACTIVE CB Palomares (carolina[0])           → también cubre carolina[2]
+  // [11] PURCHASE ACTIVE Baeza (baeza[4])            → también cubre baeza[3]
+  const cpData = [
+    { contract: createdContracts[2],  parcel: andujar[3],  desc: "Adenda Agropecuaria (+010/008)"    },
+    { contract: createdContracts[5],  parcel: carolina[2], desc: "CB Palomares (+006/007 contigua)"  },
+    { contract: createdContracts[11], parcel: baeza[3],    desc: "Compraventa Baeza (+015/031)"      },
+  ];
+  for (const cp of cpData) {
+    await prisma.contractParcel.create({
+      data: {
+        contractId: cp.contract.id,
+        parcelId: cp.parcel.id,
+        organizationId: ORG,
+      },
+    });
+    console.log(`   ✓ [${cp.desc}]  ${cp.parcel.cadastralRef}`);
+  }
+
+  // 8. Relaciones Proyecto ↔ Parcela (ProjectParcel)
   console.log("\n🔗  Asignando parcelas a proyectos…");
 
   const ppData = [
@@ -718,6 +768,7 @@ async function main() {
     prisma.contract.count({ where: { organizationId: ORG } }),
     prisma.projectParcel.count({ where: { organizationId: ORG } }),
     prisma.parcelContact.count({ where: { organizationId: ORG } }),
+    prisma.contractParcel.count({ where: { organizationId: ORG } }),
   ]);
   console.log(`   Proyectos:         ${counts[0]}`);
   console.log(`   Parcelas:          ${counts[1]}`);
@@ -725,6 +776,7 @@ async function main() {
   console.log(`   Contratos:         ${counts[3]}`);
   console.log(`   Parcelas/Proyecto: ${counts[4]}`);
   console.log(`   Contactos:         ${counts[5]}`);
+  console.log(`   ContractParcels:   ${counts[6]}`);
   console.log("");
 }
 

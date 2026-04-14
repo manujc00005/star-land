@@ -19,9 +19,11 @@ type GeoMapProps = {
   /** Map container height in pixels (default 400) */
   height?: number
   className?: string
+  /** Use satellite imagery tiles (ESRI World Imagery) */
+  satellite?: boolean
 }
 
-export function GeoMap({ features, height = 400, className }: GeoMapProps) {
+export function GeoMap({ features, height = 400, className, satellite }: GeoMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<import("leaflet").Map | null>(null)
 
@@ -29,12 +31,17 @@ export function GeoMap({ features, height = 400, className }: GeoMapProps) {
     if (!containerRef.current) return
     if (mapRef.current) return // already mounted
 
+    let cancelled = false
+
     // Leaflet only runs in the browser
     const initMap = async () => {
       const L = (await import("leaflet")).default
+      if (cancelled) return
+      // Guard against StrictMode double-invocation: container may already have a Leaflet instance
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if ((containerRef.current as any)?._leaflet_id) return
 
       // Fix broken default icon URLs in webpack / Next.js builds
-      // (only affects markers — we use polygons, but avoids console warnings)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl
       L.Icon.Default.mergeOptions({
@@ -48,10 +55,15 @@ export function GeoMap({ features, height = 400, className }: GeoMapProps) {
         scrollWheelZoom: true,
       })
 
-      // OpenStreetMap tiles — free, no API key
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:
-          '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+      // Tile layer — satellite (ESRI World Imagery) or street (OSM)
+      const tileUrl = satellite
+        ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      const tileAttr = satellite
+        ? 'Tiles &copy; <a href="https://www.esri.com" target="_blank">Esri</a>'
+        : '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
+      L.tileLayer(tileUrl, {
+        attribution: tileAttr,
         maxZoom: 19,
       }).addTo(map)
 
@@ -91,12 +103,13 @@ export function GeoMap({ features, height = 400, className }: GeoMapProps) {
         map.setView([40.4168, -3.7038], 6)
       }
 
-      mapRef.current = map
+      if (!cancelled) mapRef.current = map
     }
 
     initMap()
 
     return () => {
+      cancelled = true
       mapRef.current?.remove()
       mapRef.current = null
     }

@@ -19,13 +19,14 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users          User[]
-  owners         Owner[]
-  projects       Project[]
-  parcels        Parcel[]
-  projectParcels ProjectParcel[]
-  contracts      Contract[]
-  parcelContacts ParcelContact[]
+  users           User[]
+  owners          Owner[]
+  projects        Project[]
+  parcels         Parcel[]
+  projectParcels  ProjectParcel[]
+  contracts       Contract[]
+  parcelContacts  ParcelContact[]
+  contractParcels ContractParcel[]
 
   @@map("organizations")
 }
@@ -55,7 +56,6 @@ model Owner {
 // Proyecto de energía renovable. Estado controlado por enum para garantizar
 // integridad a nivel de base de datos.
 // geometry: GeoJSON Polygon/MultiPolygon como Json? — sin PostGIS por ahora.
-// En la siguiente fase se sustituirá o complementará con geometría espacial real.
 
 enum ProjectStatus {
   OPPORTUNITY     // Oportunidad
@@ -70,15 +70,9 @@ enum ProjectStatus {
 model Project {
   id               String        @id @default(cuid())
   name             String
-  // Potencia total MW — derivada de la suma de technologies[].powerMW.
-  // Puede ser null si ninguna tecnología tiene potencia definida.
-  // Mantenida para compatibilidad con KML, tabla, detalle.
   powerMW          Float?
-  // Array de {type: string, powerMW?: number} — validado en app layer con Zod.
-  // Migración futura: tabla ProjectTechnology si se necesitan queries por tipo.
   technologies     Json?
   status           ProjectStatus @default(OPPORTUNITY)
-  // Campos relacionales como texto libre. FK en fases futuras.
   connectionPoints String[]
   cluster          String?
   developer        String?
@@ -95,10 +89,7 @@ model Project {
 }
 
 // ─── Parcela ──────────────────────────────────────────────────────────────────
-// Parcela catastral. cadastralRef único por organización (no global):
-//   @@unique([cadastralRef, organizationId]) — restricción compuesta en Prisma.
-// geometry: GeoJSON Polygon/MultiPolygon como Json? — mismo patrón que Project.
-// Preparada para: importación CSV, relaciones Project/Owner, PostGIS futuro.
+// Parcela catastral. cadastralRef único por organización (no global).
 
 model Parcel {
   id             String       @id @default(cuid())
@@ -114,35 +105,30 @@ model Parcel {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  projectParcels ProjectParcel[]
-  contracts      Contract[]
-  contacts       ParcelContact[]
+  projectParcels  ProjectParcel[]
+  contracts       Contract[]
+  contacts        ParcelContact[]
+  contractParcels ContractParcel[]
 
   @@unique([cadastralRef, organizationId])
   @@map("parcels")
 }
 
 // ─── Relación Proyecto ↔ Parcela ──────────────────────────────────────────────
-// Tabla intermedia M:N. organizationId denormalizado para simplificar queries
-// multi-tenant sin JOINs extra. @@unique garantiza que cada parcela se asigna
-// como máximo una vez por proyecto.
+// Tabla intermedia M:N. organizationId denormalizado para simplificar queries.
 
 model ProjectParcel {
-  id             String       @id @default(cuid())
-  projectId      String
-  project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  parcelId       String
-  parcel         Parcel       @relation(fields: [parcelId], references: [id], onDelete: Cascade)
-  // Afección de la parcela en este proyecto concreto.
-  affectation    String?
-  // Notas de contratación en el contexto de este proyecto.
-  // Separadas de Parcel.notes (que serían globales) para permitir notas distintas por proyecto.
+  id                String            @id @default(cuid())
+  projectId         String
+  project           Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parcelId          String
+  parcel            Parcel            @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  affectation       String?
   notes             String?
-  // Estado operativo de negociación en este proyecto — independiente del estado legal del contrato.
   negotiationStatus NegotiationStatus @default(SEARCHING)
   organizationId    String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime     @default(now())
+  organization      Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt         DateTime          @default(now())
 
   @@unique([projectId, parcelId])
   @@map("project_parcels")
@@ -150,9 +136,8 @@ model ProjectParcel {
 
 // ─── Contrato ─────────────────────────────────────────────────────────────────
 // Contrato de arrendamiento o compraventa sobre una parcela catastral.
-// Vinculado a una parcela y un propietario de la misma organización.
-// Enums en BD para integridad: ContractType, ContractStatus.
-// Preparado para ampliar con: cláusulas, fases, anexos, expedientes.
+// parcelId es la parcela principal (backward compat).
+// contractParcels permite vincular parcelas adicionales (M:N).
 
 enum ContractType {
   RENTAL
@@ -165,6 +150,7 @@ enum ContractStatus {
   DRAFT
   ACTIVE
   EXPIRED
+  SIGNED_ADDENDUM  // Firmado con adendas activas
 
   @@map("contract_status")
 }
@@ -188,6 +174,9 @@ model Contract {
   status         ContractStatus @default(DRAFT)
   price          Float?
   signedAt       DateTime?
+  nextStep       String?
+  nextStepDate   DateTime?
+  notes          String?
   parcelId       String
   parcel         Parcel         @relation(fields: [parcelId], references: [id], onDelete: Cascade)
   ownerId        String
@@ -197,14 +186,29 @@ model Contract {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
+  contractParcels ContractParcel[]
+
   @@map("contracts")
 }
 
+// ─── Relación Contrato ↔ Parcela (M:N) ───────────────────────────────────────
+// Permite vincular múltiples parcelas a un contrato.
+
+model ContractParcel {
+  id             String       @id @default(cuid())
+  contractId     String
+  contract       Contract     @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  parcelId       String
+  parcel         Parcel       @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([contractId, parcelId])
+  @@map("contract_parcels")
+}
+
 // ─── Contacto de parcela ──────────────────────────────────────────────────────
-// Persona de contacto/gestión asociada a una parcela. Semánticamente distinta
-// del Owner (propietario catastral que firma contratos).
-// Rol: texto libre + catálogo en app layer para no requerir migrations al añadir roles.
-// Ejemplos de rol: API, Interlocutor familiar, Agricultor, Abogado / Gestor, Otro.
 
 model ParcelContact {
   id             String       @id @default(cuid())
@@ -224,7 +228,6 @@ model ParcelContact {
 }
 
 // ─── Usuario ──────────────────────────────────────────────────────────────────
-// Pertenece a una organización. En fases futuras habrá roles (ADMIN, VIEWER…).
 
 model User {
   id             String       @id @default(cuid())

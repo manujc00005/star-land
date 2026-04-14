@@ -10,13 +10,14 @@ export const TYPE_LABELS: Record<ContractType, string> = {
   PURCHASE: "Compraventa",
 }
 
-export const CONTRACT_STATUSES = ["DRAFT", "ACTIVE", "EXPIRED"] as const
+export const CONTRACT_STATUSES = ["DRAFT", "ACTIVE", "EXPIRED", "SIGNED_ADDENDUM"] as const
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number]
 
 export const STATUS_LABELS: Record<ContractStatus, string> = {
   DRAFT: "Borrador",
   ACTIVE: "Activo",
   EXPIRED: "Expirado",
+  SIGNED_ADDENDUM: "Firmado - Adenda",
 }
 
 // ── Schema Zod ─────────────────────────────────────────────────────────────────

@@ -9,11 +9,10 @@ import { getOwners } from "@/services/owner.service"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ProjectStatusBadge } from "@/components/projects/project-status-badge"
-import { DeleteProjectButton } from "@/components/projects/delete-project-button"
 import { ProjectTabs } from "@/components/projects/project-tabs"
 import type { TabParcel, TabContract, TabContact, PanelOwner } from "@/components/projects/project-tabs"
 import { type Technology } from "@/lib/validations/project"
-import { ArrowLeft, Download, Zap, Cable, Building2 } from "lucide-react"
+import { ArrowLeft, Zap, Cable, Building2 } from "lucide-react"
 import type { GeoMapFeature } from "@/components/map/geo-map"
 
 type Props = {
@@ -125,7 +124,12 @@ export default async function ProjectDetailPage({ params }: Props) {
       status: c.status,
       price: c.price,
       signedAt: c.signedAt,
-      parcel: { id: c.parcel.id, cadastralRef: c.parcel.cadastralRef },
+      nextStep: c.nextStep,
+      nextStepDate: c.nextStepDate,
+      parcels: [
+        { id: c.parcel.id, cadastralRef: c.parcel.cadastralRef, municipality: c.parcel.municipality ?? null, surface: c.parcel.surface },
+        ...c.contractParcels.map((cp) => cp.parcel),
+      ],
       owner: { id: c.owner.id, name: c.owner.name },
     }))
     return {
@@ -153,7 +157,12 @@ export default async function ProjectDetailPage({ params }: Props) {
     status: c.status,
     price: c.price,
     signedAt: c.signedAt,
-    parcel: { id: c.parcel.id, cadastralRef: c.parcel.cadastralRef },
+    nextStep: c.nextStep,
+    nextStepDate: c.nextStepDate,
+    parcels: [
+      { id: c.parcel.id, cadastralRef: c.parcel.cadastralRef, municipality: c.parcel.municipality ?? null, surface: c.parcel.surface },
+      ...c.contractParcels.map((cp) => cp.parcel),
+    ],
     owner: { id: c.owner.id, name: c.owner.name },
   }))
 
@@ -177,18 +186,6 @@ export default async function ProjectDetailPage({ params }: Props) {
             {project.name}
           </h1>
           <ProjectStatusBadge status={project.status} />
-        </div>
-        <div className="flex gap-2 shrink-0">
-          <Button asChild variant="outline" size="sm">
-            <a href={`/api/projects/${id}/export/kml`} download>
-              <Download className="h-4 w-4 mr-1.5" />
-              KML
-            </a>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/projects/${id}/edit`}>Editar</Link>
-          </Button>
-          <DeleteProjectButton id={id} />
         </div>
       </div>
 
@@ -265,6 +262,7 @@ export default async function ProjectDetailPage({ params }: Props) {
         parcels={tabParcels}
         contracts={tabContracts}
         owners={owners}
+        technologies={technologies}
       />
     </div>
   )
